@@ -1,58 +1,69 @@
 import { loginFormControl } from "../../config/config";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Form from "../../components/common/Form";
 import { useDispatch } from "react-redux";
 import { loginUser } from "@/store/auth/auth";
-import { toast } from "react-toastify"; // Import toast for notifications
-import "react-toastify/dist/ReactToastify.css"; // Import toast styles
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const initialState = {
   email: "",
   password: "",
 };
 
-
-const authLogin = () => {
+const AuthLogin = () => {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  function onSubmit(e) {
-    e.preventDefault();  // Prevent the default form submission
-    console.log("Form submitted", formData);  // Log the form data
+  async function onSubmit(e) {
+    e.preventDefault();
 
-    // Dispatch the login action
-    dispatch(loginUser(formData)).then((data) => {
-      if (data?.payload?.success) {
-        // Reset the form after successful login
-        setFormData(initialState);
+    if (!formData.email || !formData.password) {
+      toast.error("Please fill in all fields before logging in.");
+      return;
+    }
+
+    try {
+      const response = await dispatch(loginUser(formData)).unwrap();
+
+      if (response?.message === "Logged in successfully." && response?.user) {
+        setFormData(initialState); 
         toast.success("Login successful!");
-      } else {
-        // Handle error scenarios with specific messages
-        if (data?.payload?.message === "Email not found") {
+        navigate("/home"); 
+      } 
+      
+      else {
+        
+        if (response?.message === "User doesn't exist. Kindly register then try again") {
           toast.error("Email not found! Please check your email address.");
-        } else if (data?.payload?.message === "Incorrect password") {
-          toast.error("Incorrect password! Confirm password and try again.");
-        } else {
+        } 
+        
+        else if (response?.message === "Password is incorrect") {
+          toast.error("Incorrect password! Please check your password.");
+        } 
+        
+        else {
           toast.error("Login failed! Please check your credentials.");
         }
       }
-    }).catch((error) => {
+    } catch (error) {
       console.error("Login error:", error);
       toast.error("An error occurred. Please try again.");
-    });
+    }
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 ">
+    <div className="mx-auto w-full max-w-md space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground ">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Sign in to your account
         </h1>
-        <p className="mt-2 ">
+        <p className="mt-2">
           Don't have an account?
           <Link
-            className="font-medium text-primary ml-2 hover:underline "
+            className="font-medium text-primary ml-2 hover:underline"
             to="/auth/register"
           >
             Create an account
@@ -70,4 +81,4 @@ const authLogin = () => {
   );
 };
 
-export default authLogin;
+export default AuthLogin;

@@ -17,10 +17,16 @@ const Register = () => {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { error, isAuthenticated } = useSelector((state) => state.auth);
+  const { error } = useSelector((state) => state.auth);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if the form is filled (skip validation logic here for now)
+    if (!formData.userName || !formData.email || !formData.password) {
+      toast.error("Please fill in all the fields.");
+      return;
+    }
 
     try {
       const data = await dispatch(registerUser(formData));
@@ -28,17 +34,20 @@ const Register = () => {
       if (data?.payload?.message === "Registration successful") {
         setFormData(initialState);
         toast.success("Registration successful!");
-        navigate("/auth/login");
+        navigate("/auth/login"); // Redirect to login page after successful registration
       }
 
       if (data?.payload?.message === "User already exists") {
+        setFormData(initialState);
         toast.error("User already exists");
+        navigate("/auth/login"); // Redirect to login page if user already exists
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.");
     }
   };
 
+  // Handle any errors from the server response
   if (error) {
     toast.error(error);
   }
@@ -48,7 +57,7 @@ const Register = () => {
       <div className="text-center">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Create a new account
-        </h1> 
+        </h1>
         <p className="mt-2">
           Already have an account?
           <Link
