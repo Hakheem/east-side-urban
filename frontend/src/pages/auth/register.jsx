@@ -2,7 +2,7 @@ import { registerFormControl } from "../../config/config";
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Form from "../../components/common/Form";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { registerUser } from "../../store/auth/auth";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -22,7 +22,7 @@ const Register = () => {
     e.preventDefault();
     dispatch(registerUser(formData)).then((result) => {
       if (result.payload?.success) {
-        navigate('/auth/login');
+        navigate("/auth/login");
         toast.success("Registration successful");
       } else if (result.payload?.message === "User already exists") {
         toast.error("User already exists. Please use a different email.");
@@ -30,12 +30,7 @@ const Register = () => {
         toast.error("Registration failed");
       }
     });
-  
-  
   };
-  
-
- 
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">

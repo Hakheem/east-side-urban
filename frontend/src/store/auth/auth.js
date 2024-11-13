@@ -24,19 +24,20 @@ export const registerUser = createAsyncThunk(
 
 // Async action to LOGIN user
 export const loginUser = createAsyncThunk("auth/login", async (formData) => {
-  const response = await axios.post(
-    "http://localhost:5000/api/auth/login",
-    formData,
-    {
-      withCredentials: true,
-    }
-  );
-  return response.data;
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/auth/login",
+      formData,
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "An unexpected error occurred",
+    };
+  }
 });
-
-
-
-
 
 const authSlice = createSlice({
   name: "auth",

@@ -6,6 +6,7 @@ import { useDispatch } from "react-redux";
 import { loginUser } from "@/store/auth/auth";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import GoogleSignIn from "@/components/logins/GoogleSignIn";
 
 const initialState = {
   email: "",
@@ -19,19 +20,26 @@ const AuthLogin = () => {
 
   async function onSubmit(e) {
     e.preventDefault();
-  
-    dispatch(loginUser(formData)).then((data) => {
-      if (data?.payload?.success) {
-        toast.success("Login successful!");
-        navigate("/home");
-      } else {
-        toast.error(data?.payload?.message || "An unknown error occurred.");
-      }
-    }).catch((error) => {
-      toast.error(error.response?.data?.message || "An error occurred during login.");
-    });
+
+    dispatch(loginUser(formData))
+      .then((action) => {
+        const { success, message } = action.payload;
+
+        if (success === false) {
+          console.log("Displaying error message:", message);
+          toast.error(message || "An unknown error occurred.");
+        } else if (success === true) {
+          toast.success("Login successful!");
+          navigate("/home");
+        } else {
+          toast.error("An unknown error occurred.");
+        }
+      })
+      .catch((error) => {
+        console.error("Login error:", error);
+        toast.error("An unexpected error occurred during login.");
+      });
   }
-  
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">
@@ -56,6 +64,8 @@ const AuthLogin = () => {
         setFormData={setFormData}
         onSubmit={onSubmit}
       />
+
+      <GoogleSignIn/>
     </div>
   );
 };
