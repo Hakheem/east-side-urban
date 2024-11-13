@@ -2,8 +2,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
 
-
-
 // register
 const registerUser = async (req, res) => {
   const { userName, email, password } = req.body;
@@ -23,14 +21,14 @@ const registerUser = async (req, res) => {
         message: "User already exists",
       });
     }
-  
+
     const hashPassword = await bcrypt.hash(password, 14);
     const newUser = new User({
       userName,
       email,
       password: hashPassword,
     });
-  
+
     await newUser.save();
     res.status(201).json({
       success: true,
@@ -44,8 +42,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-
-// Login User 
+// Login User
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -54,35 +51,29 @@ const loginUser = async (req, res) => {
     if (!checkUser) {
       return res.status(404).json({
         success: false,
-        message: "User doesn't exist. Kindly register then try again."
+        message: "User doesn't exist. Kindly register then try again.",
       });
     }
 
     const checkPassword = await bcrypt.compare(password, checkUser.password);
     if (!checkPassword) {
       return res.status(401).json({
-        
-        
-success: false,
-        message: "Password is incorrect. Please try again."
+        success: false,
+        message: "Password is incorrect. Please try again.",
       });
     }
 
-    // Return a success response without JWT for now
     res.status(200).json({
       success: true,
-      
-  
-message: "Login successful",
+
+      message: "Login successful",
       user: {
         email: checkUser.email,
         role: checkUser.role,
         id: checkUser._id,
-      }
+      },
     });
-  } 
-      
-catch (error) {
+  } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
@@ -90,6 +81,5 @@ catch (error) {
     });
   }
 };
-
 
 module.exports = { registerUser, loginUser };
