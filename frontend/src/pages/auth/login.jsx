@@ -1,5 +1,5 @@
-import { loginFormControl } from "../../config/config";
 import React, { useState } from "react";
+import { loginFormControl } from "../../config/config";
 import { Link, useNavigate } from "react-router-dom";
 import Form from "../../components/common/Form";
 import { useDispatch } from "react-redux";
@@ -19,40 +19,19 @@ const AuthLogin = () => {
 
   async function onSubmit(e) {
     e.preventDefault();
-
-    if (!formData.email || !formData.password) {
-      toast.error("Please fill in all fields before logging in.");
-      return;
-    }
-
-    try {
-      const response = await dispatch(loginUser(formData)).unwrap();
-
-      if (response?.message === "Logged in successfully." && response?.user) {
-        setFormData(initialState); 
+  
+    dispatch(loginUser(formData)).then((data) => {
+      if (data?.payload?.success) {
         toast.success("Login successful!");
-        navigate("/home"); 
-      } 
-      
-      else {
-        
-        if (response?.message === "User doesn't exist. Kindly register then try again") {
-          toast.error("Email not found! Please check your email address.");
-        } 
-        
-        else if (response?.message === "Password is incorrect") {
-          toast.error("Incorrect password! Please check your password.");
-        } 
-        
-        else {
-          toast.error("Login failed! Please check your credentials.");
-        }
+        navigate("/home");
+      } else {
+        toast.error(data?.payload?.message || "An unknown error occurred.");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error("An error occurred. Please try again.");
-    }
+    }).catch((error) => {
+      toast.error(error.response?.data?.message || "An error occurred during login.");
+    });
   }
+  
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">

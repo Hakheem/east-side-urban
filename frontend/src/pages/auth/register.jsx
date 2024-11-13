@@ -17,40 +17,25 @@ const Register = () => {
   const [formData, setFormData] = useState(initialState);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { error } = useSelector((state) => state.auth);
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
-    // Check if the form is filled (skip validation logic here for now)
-    if (!formData.userName || !formData.email || !formData.password) {
-      toast.error("Please fill in all the fields.");
-      return;
-    }
-
-    try {
-      const data = await dispatch(registerUser(formData));
-
-      if (data?.payload?.message === "Registration successful") {
-        setFormData(initialState);
-        toast.success("Registration successful!");
-        navigate("/auth/login"); // Redirect to login page after successful registration
+    dispatch(registerUser(formData)).then((result) => {
+      if (result.payload?.success) {
+        navigate('/auth/login');
+        toast.success("Registration successful");
+      } else if (result.payload?.message === "User already exists") {
+        toast.error("User already exists. Please use a different email.");
+      } else {
+        toast.error("Registration failed");
       }
-
-      if (data?.payload?.message === "User already exists") {
-        setFormData(initialState);
-        toast.error("User already exists");
-        navigate("/auth/login"); // Redirect to login page if user already exists
-      }
-    } catch (error) {
-      toast.error("An error occurred. Please try again.");
-    }
+    });
+  
+  
   };
+  
 
-  // Handle any errors from the server response
-  if (error) {
-    toast.error(error);
-  }
+ 
 
   return (
     <div className="mx-auto w-full max-w-md space-y-6">

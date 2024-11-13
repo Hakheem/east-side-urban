@@ -26,12 +26,10 @@ const CheckAuth = ({ isAuthenticated, children, user }) => {
       }
     }
 
-    // Redirect non-admin users away from admin routes
     if (user?.role !== "admin" && location.pathname.includes("/admin")) {
-      return <Navigate to="/home" />;
+      return <Navigate to="/unauthorised" />;
     }
 
-    // Redirect admin users away from shop routes
     if (user?.role === "admin" && location.pathname.includes("/home")) {
       return <Navigate to="/admin/dashboard" />;
     }
