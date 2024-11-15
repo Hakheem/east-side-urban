@@ -1,6 +1,7 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
-import "./App.css";
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { checkAuth } from "./store/auth/auth";
 import AuthLayout from "./components/auth/layout";
 import Login from "./pages/auth/login";
 import Register from "./pages/auth/register";
@@ -17,10 +18,29 @@ import Checkout from "./pages/shopping-veiw/checkout";
 import Account from "./pages/shopping-veiw/account";
 import CheckAuth from "./components/common/CheckAuth";
 import Unauthorised from "./pages/unauthorised/Unauthorised";
-import { useSelector } from "react-redux";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function App() {
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { user, isAuthenticated, isLoading } = useSelector(
+    (state) => state.auth
+  );
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col space-y-3">
+        <Skeleton className="h-[125px] w-[800px] rounded-xl" />
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-[800px]" />
+          <Skeleton className="h-4 w-[800px]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col bg-white">
@@ -37,6 +57,7 @@ function App() {
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
         </Route>
+
         {/* admin routes */}
         <Route
           path="/admin"
@@ -51,6 +72,7 @@ function App() {
           <Route path="orders" element={<AdminOrders />} />
           <Route path="features" element={<AdminFeatures />} />
         </Route>
+
         {/* shop routes */}
         <Route
           path="/"
@@ -65,6 +87,7 @@ function App() {
           <Route path="checkout" element={<Checkout />} />
           <Route path="account" element={<Account />} />
         </Route>
+
         <Route path="*" element={<NotFound />} />
         <Route path="unauthorised" element={<Unauthorised />} />
       </Routes>

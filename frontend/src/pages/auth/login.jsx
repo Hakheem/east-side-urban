@@ -21,24 +21,21 @@ const AuthLogin = () => {
   async function onSubmit(e) {
     e.preventDefault();
 
-    dispatch(loginUser(formData))
-      .then((action) => {
-        const { success, message } = action.payload;
+    try {
+      const action = await dispatch(loginUser(formData));
+      const { success, message } = action.payload;
 
-        if (success === false) {
-          console.log("Displaying error message:", message);
-          toast.error(message || "An unknown error occurred.");
-        } else if (success === true) {
-          toast.success("Login successful!");
-          navigate("/home");
-        } else {
-          toast.error("An unknown error occurred.");
-        }
-      })
-      .catch((error) => {
-        console.error("Login error:", error);
-        toast.error("An unexpected error occurred during login.");
-      });
+      if (success) {
+        toast.success("Login successful!");
+        navigate("/home");
+        setFormData(initialState);
+      } else {
+        toast.error(message || "An unknown error occurred.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("An unexpected error occurred during login.");
+    }
   }
 
   return (
@@ -65,7 +62,7 @@ const AuthLogin = () => {
         onSubmit={onSubmit}
       />
 
-      <GoogleSignIn/>
+      <GoogleSignIn />
     </div>
   );
 };
