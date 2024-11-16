@@ -19,6 +19,7 @@ import Account from "./pages/shopping-veiw/account";
 import CheckAuth from "./components/common/CheckAuth";
 import Unauthorised from "./pages/unauthorised/Unauthorised";
 import { Skeleton } from "@/components/ui/skeleton";
+import Loader from "./components/Loader";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -32,13 +33,7 @@ function App() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col space-y-3">
-        <Skeleton className="h-[125px] w-[800px] rounded-xl" />
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-[800px]" />
-          <Skeleton className="h-4 w-[800px]" />
-        </div>
-      </div>
+      <Loader/>
     );
   }
 

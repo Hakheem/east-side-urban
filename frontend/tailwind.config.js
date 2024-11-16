@@ -1,6 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-	darkMode: ["class"], 
+	darkMode: ["class"],
 	content: [
 	  "./src/**/*.{js,jsx,ts,tsx}", 
 	],
@@ -53,8 +53,16 @@ export default {
 			'5': 'hsl(var(--chart-5))',
 		  },
 		},
+		animation: {
+		  'spin-custom': 'spin-custom 1s infinite',
+		},
+		keyframes: {
+		  'spin-custom': {
+			to: { transform: 'rotate(0.5turn)' },
+		  },
+		},
 	  },
 	},
 	plugins: [require("tailwindcss-animate")],
-  }
+  };
   
