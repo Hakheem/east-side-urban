@@ -4,8 +4,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import Form from '@/components/common/Form';
 import { addProductsFormElements } from '@/config/config';
 import ProductImageUpload from './ProductImageUpload'; 
-import { useDispatch } from 'react-redux';
-import { fetchProducts } from '@/store/admin/productsSlice/ProductsSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { addNewProduct, fetchProducts } from '@/store/admin/productsSlice/ProductsSlice';
+import { toast } from "react-toastify";
 
 
 
@@ -27,17 +28,39 @@ const AdminProducts = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const [imageLoading, setImageLoading] = useState(false)
   const dispatch = useDispatch();
+  const {productList} = useSelector(state=>state.adminProducts)
 
-  function onSubmit() {
+  function onSubmit(e) {
     e.preventDefault();
+    
+    dispatch(addNewProduct({
+      ...formData,
+      image: uploadedImageUrl,
+    })).then((data) => {
+      console.log(data);
+  
+      if (data?.payload?.success) {
+        dispatch(fetchProducts());
+        setImageFile(null);
+        setFormData(initialFormData);
+        setCreateProducts(false);
+        toast.success("Product added successfully");
+      } else {
+        toast.error("Failed to add product");
+      }
+    });
+  
     console.log('Form submitted', formData);
-
-
   }
+  
+  
 
   useEffect(()=>{
 dispatch(fetchProducts())
   },[dispatch])
+
+  console.log(productList, 'productList');
+  
 
 
   return (
