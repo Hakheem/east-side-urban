@@ -70,11 +70,11 @@ export const addProductsFormElements = [
         name: 'brand',
         componentType: 'select',
         options:[
-            {id: 'nike', label: 'Men' },
-            {id: 'adidas', label: 'Women' },
-            {id: 'puma', label: 'Kids' },
-            {id: 'timberland', label: 'Accessories' },
-            {id: 'vans', label: 'Footwear' },
+            {id: 'nike', label: 'Nike' },
+            {id: 'adidas', label: 'Adidas' },
+            {id: 'puma', label: 'Puma' },
+            {id: 'timberland', label: 'Timberland' },
+            {id: 'vans', label: 'Vans' },
             {id: 'converse ', label: 'Converse ' },
             {id: 'new balance', label: 'New Balance' },
             {id: 'formal ', label: 'Formal ' },
@@ -102,4 +102,41 @@ export const addProductsFormElements = [
         type: 'number',
         placeholder: 'Enter total stock',
     },
+]
+
+
+export const shopHeaderMenuItems =[
+{
+    id : 'home',
+    label: 'Home',
+    path : '/home',
+},
+{
+    id : 'men',
+    label: 'Men',
+    path : '/listing',
+},
+{
+    id : 'women',
+    label: 'Women',
+    path : '/listing',
+},
+{
+    id : 'kids',
+    label: 'Kids',
+    path : '/listing',
+},
+{
+    id : 'accesories',
+    label: 'Accesories',
+    path : '/listing',
+},
+{
+    id : 'footwear',
+    label: 'Footwear',
+    path : '/listing',
+},
+
+
+
 ]

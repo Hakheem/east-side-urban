@@ -14,9 +14,10 @@ import { Input } from "../ui/input";
 const Form = ({
   formControls,
   formData,
-  setFormData, 
+  setFormData,
   onSubmit,
   buttonText,
+  isBtnDisabled,
 }) => {
   function renderInputsByComponentType(getControlItem) {
     let element = null;
@@ -43,7 +44,7 @@ const Form = ({
 
       case "select":
         element = (
-          <Select 
+          <Select
             onValueChange={(value) =>
               setFormData({
                 ...formData,
@@ -107,7 +108,7 @@ const Form = ({
   }
 
   return (
-    <form  onSubmit={onSubmit}>
+    <form onSubmit={onSubmit}>
       <div className="flex flex-col gap-3">
         {formControls.map((controlItem) => (
           <div className="grid w-full gap-1.5" key={controlItem.name}>
@@ -116,7 +117,7 @@ const Form = ({
           </div>
         ))}
       </div>
-      <Button type="submit" className="mt-6 w-full">
+      <Button disabled={isBtnDisabled} type="submit" className="mt-6 w-full">
         {buttonText || "Submit"}
       </Button>
     </form>

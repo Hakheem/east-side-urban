@@ -29,124 +29,143 @@ const handleImageUpload = async (req, res) => {
   }
 };
 
-
 // Add new product
-const addProduct = async (req, res)=>{
+const addProduct = async (req, res) => {
   try {
     const {
-      image, title, description, category, brand, price, salePrice, quantity,
-    } = req.body
+      image,
+      title,
+      description,
+      category,
+      brand,
+      price,
+      salePrice,
+      quantity,
+    } = req.body;
 
     const newlyAddedProduct = new Product({
-      image, title, description, category, brand, price, salePrice, quantity,
-    })
+      image,
+      title,
+      description,
+      category,
+      brand,
+      price,
+      salePrice,
+      quantity,
+    });
 
-    await newlyAddedProduct.save()
+    await newlyAddedProduct.save();
     res.status(201).json({
       success: true,
       message: "Product added successfully.",
       data: newlyAddedProduct,
     });
-
   } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       message: "Error while adding new product.",
     });
-    
   }
-}
+};
 
-
-// fetch everything
-const fetchProducts = async (req, res)=>{
+// Fetch all products
+const fetchProducts = async (req, res) => {
   try {
-    const allProducts = await Product.find({})
+    const allProducts = await Product.find({});
     res.status(200).json({
       success: true,
       message: "Products fetched successfully.",
       data: allProducts,
     });
-    
   } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       message: "Error while fetching products.",
     });
-    
   }
-}
-
+};
 
 // Edit product
-const editProduct = async (req, res)=>{
+const editProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { image, title, description, category, brand, price, salePrice, quantity } = req.body
-    const updatedProduct = await Product.findById(id)
+    const {
+      image,
+      title,
+      description,
+      category,
+      brand,
+      price,
+      salePrice,
+      quantity,
+    } = req.body;
 
-    if(!updatedProduct ) return res.status(401).json({
-      success: false,
-      message: "Product not found.",
-    })
-    
-    findProduct.image = image || findProduct.image
-    findProduct.title = title || findProduct.title
-    findProduct.description = description || findProduct.description
-    findProduct.category = category || findProduct.category
-    findProduct.brand = brand || findProduct.brand
-    findProduct.price = price || findProduct.price
-    findProduct.salePrice = salePrice || findProduct.salePrice
-    findProduct.quantity = quantity || findProduct.quantity
+    const updatedProduct = await Product.findById(id);
 
-    await findProduct.save()
+    if (!updatedProduct) {
+      return res.status(401).json({
+        success: false,
+        message: "Product not found.",
+      });
+    }
+
+    updatedProduct.image = image || updatedProduct.image;
+    updatedProduct.title = title || updatedProduct.title;
+    updatedProduct.description = description || updatedProduct.description;
+    updatedProduct.category = category || updatedProduct.category;
+    updatedProduct.brand = brand || updatedProduct.brand;
+    updatedProduct.price = price || updatedProduct.price;
+    updatedProduct.salePrice = salePrice || updatedProduct.salePrice;
+    updatedProduct.quantity = quantity || updatedProduct.quantity;
+
+    await updatedProduct.save();
+
     res.status(200).json({
       success: true,
       message: "Product updated successfully.",
-      data: findProduct,
+      data: updatedProduct,
     });
-    
   } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       message: "Error while editing product.",
     });
-    
   }
-}
+};
 
-
-// Delete that product buana
-const deleteProduct = async (req, res)=>{
+// Delete product
+const deleteProduct = async (req, res) => {
   try {
-    const {id} = req.params
-    const product = await Product.findByIdAndDelete(id)
+    const { id } = req.params;
+    const product = await Product.findByIdAndDelete(id);
 
-    if(!product)
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found.",
-      })
-
-      res.status(200).json({
-        success: true,
-        message: "Product deleted successfully.",
       });
-    
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Product deleted successfully.",
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({
       success: false,
       message: "Error while deleting product.",
     });
-    
   }
-}
+};
 
-
-
-
-module.exports = { handleImageUpload, addProduct, fetchProducts, editProduct, deleteProduct };
+module.exports = {
+  handleImageUpload,
+  addProduct,
+  fetchProducts,
+  editProduct,
+  deleteProduct,
+};

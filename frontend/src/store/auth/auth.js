@@ -4,7 +4,7 @@ import axios from "axios";
 const initialState = {
   isAuthenticated: false,
   user: null,
-  isLoading: true,
+  isLoading: true, 
   error: null,
 };
 
@@ -39,6 +39,24 @@ export const loginUser = createAsyncThunk("auth/login", async (formData) => {
     };
   }
 });
+
+
+// Async action to LOGOUT user
+export const logoutUser = createAsyncThunk("auth/logout", async (formData) => {
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/auth/logout",{}, 
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || "An unexpected error occurred",
+    };
+  }
+});
+
 
 // Async action to check user authentication
 export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
@@ -126,7 +144,15 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.error = action.error.message || "User is unauthorized";
+      }) 
+      // logout
+       .addCase(logoutUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+          state.user = null;
+          state.isAuthenticated = false;
+        
       });
+      
   },
 });
 
