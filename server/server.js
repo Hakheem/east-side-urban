@@ -4,6 +4,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const authRouter = require("./routes/auth/AuthRoutes");
 const adminProductsRouter = require('./routes/admin/productRoutes')
+const shopProductsRouter = require('./routes/shop/shopProductRoutes')
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -39,5 +40,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use('/api/admin/products', adminProductsRouter )
+app.use('/api/products', shopProductsRouter )
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

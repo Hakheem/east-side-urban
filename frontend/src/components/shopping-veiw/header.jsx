@@ -59,7 +59,7 @@ function RightContent() {
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className="bg-black">
+          <Avatar className="bg-black cursor-pointer ">
             <AvatarFallback className="bg-black text-white font-extrabold">
               {user?.userName ? user.userName[0].toUpperCase() : "?"}
             </AvatarFallback>

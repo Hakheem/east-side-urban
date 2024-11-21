@@ -29,16 +29,17 @@ export const addNewProduct = createAsyncThunk(
 );
 
 // Fetch Products
-export const fetchProducts = createAsyncThunk("/products/fetch", async () => {
-  try {
-    const response = await axios.get(
-      "http://localhost:5000/api/admin/products/fetch"
-    );
-    return response.data;
-  } catch (error) {
-    return { error: error.response?.data || error.message };
+export const fetchProducts = createAsyncThunk(
+  "/products/fetch",
+  async () => {
+    try {
+      const response = await axios.get("http://localhost:5000/api/admin/products/fetch");
+      return response.data; 
+    } catch (error) {
+      return { error: error.response?.data || error.message };
+    }
   }
-});
+);
 
 // Edit Product
 export const editProduct = createAsyncThunk(
@@ -54,7 +55,7 @@ export const editProduct = createAsyncThunk(
           },
         }
       );
-      return response.data;
+      return response.data; 
     } catch (error) {
       return { error: error.response?.data || error.message };
     }
@@ -69,12 +70,14 @@ export const deleteProduct = createAsyncThunk(
       const response = await axios.delete(
         `http://localhost:5000/api/admin/products/delete/${id}`
       );
-      return response.data;
+      return response.data; 
     } catch (error) {
       return { error: error.response?.data || error.message };
     }
   }
 );
+
+
 
 // slices
 const adminProductsSlice = createSlice({
@@ -103,43 +106,44 @@ const adminProductsSlice = createSlice({
         console.log(action.payload);
         state.isLoading = false;
         state.productList = action.payload.data;
+        
       })
       .addCase(fetchProducts.rejected, (state, action) => {
         state.isLoading = false;
-        state.productList = [];
+        state.productList = []
         state.error = action.error.message;
       })
       // Edit Product
-      .addCase(editProduct.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(editProduct.fulfilled, (state, action) => {
-        state.isLoading = false;
-        const index = state.productList.findIndex(
-          (product) => product.id === action.payload.id
-        );
-        if (index !== -1) {
-          state.productList[index] = action.payload;
-        }
-      })
-      .addCase(editProduct.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message;
-      })
+      // .addCase(editProduct.pending, (state) => {
+      //   state.isLoading = true;
+      // })
+      // .addCase(editProduct.fulfilled, (state, action) => {
+      //   state.isLoading = false;
+      //   const index = state.productList.findIndex(
+      //     (product) => product.id === action.payload.id
+      //   );
+      //   if (index !== -1) {
+      //     state.productList[index] = action.payload;
+      //   }
+      // })
+      // .addCase(editProduct.rejected, (state, action) => {
+      //   state.isLoading = false;
+      //   state.error = action.error.message;
+      // })
       // Delete Product
-      .addCase(deleteProduct.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(deleteProduct.fulfilled, (state, action) => {
-        state.isLoading = false;
-        state.productList = state.productList.filter(
-          (product) => product.id !== action.payload.id
-        );
-      })
-      .addCase(deleteProduct.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message;
-      });
+      // .addCase(deleteProduct.pending, (state) => {
+      //   state.isLoading = true;
+      // })
+      // .addCase(deleteProduct.fulfilled, (state, action) => {
+      //   state.isLoading = false;
+      //   state.productList = state.productList.filter(
+      //     (product) => product.id !== action.payload.id
+      //   );
+      // })
+      // .addCase(deleteProduct.rejected, (state, action) => {
+      //   state.isLoading = false;
+      //   state.error = action.error.message;
+      // });
   },
 });
 
