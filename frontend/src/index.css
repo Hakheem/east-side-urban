@@ -64,7 +64,3 @@
     @apply bg-background text-foreground;
   }
 }
-
-.padded{
-  padding: 0 3%;
-}
