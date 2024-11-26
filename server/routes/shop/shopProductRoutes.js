@@ -4,6 +4,6 @@ const { getFilteredProducts, productDetails } = require("../../controllers/shop/
 const router = express.Router();
 
 router.get("/fetch", getFilteredProducts);
-router.get("/fetch/:id", productDetails);
+router.get("/get/:id", productDetails);
 
 module.exports = router;

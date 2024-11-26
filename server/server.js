@@ -3,8 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const authRouter = require("./routes/auth/AuthRoutes");
-const adminProductsRouter = require('./routes/admin/productRoutes')
-const shopProductsRouter = require('./routes/shop/shopProductRoutes')
+const adminProductsRouter = require("./routes/admin/productRoutes");
+const shopProductsRouter = require("./routes/shop/shopProductRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,7 +16,6 @@ mongoose
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
-// Middleware
 app.use(
   cors({
     origin: ["http://localhost:5173"],
@@ -32,15 +31,13 @@ app.use(
   })
 );
 
-// Handle preflight requests
 app.options("*", cors());
 
 app.use(cookieParser());
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
-app.use('/api/admin/products', adminProductsRouter )
-app.use('/api/products', shopProductsRouter )
-
+app.use("/api/admin/products", adminProductsRouter);
+app.use("/api/products", shopProductsRouter);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

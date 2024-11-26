@@ -11,17 +11,24 @@ import { Button } from "@/components/ui/button";
 import { LuArrowUpDown } from "react-icons/lu";
 import { sortOptions } from "@/config/config";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchFilteredProducts } from "@/store/shop/shopProductsSlice";
+import {
+  fetchFilteredProducts,
+  fetchProductDetails,
+} from "@/store/shop/shopProductsSlice";
 import ShopProductDisplay from "./shopProductsDisplay";
 import { useSearchParams } from "react-router-dom";
+import ProductDetails from "./productDetails";
 
 const Listing = () => {
   const dispatch = useDispatch();
-  const { productList, error } = useSelector((state) => state.shopProducts);
+  const { productList, productDetails, error } = useSelector(
+    (state) => state.shopProducts
+  );
 
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState("price-lowtohigh");
   const [searchParams, setSearchParams] = useSearchParams();
+  const [showProductDetails, setShowProductDetails] = useState(false);
 
   // Handle sorting changes
   const handleSort = (value) => {
@@ -69,10 +76,30 @@ const Listing = () => {
     setSearchParams(query);
   }, [filters, setSearchParams]);
 
+  // handleProductDetails function
+  function handleProductDetails(currentId) {
+    dispatch(fetchProductDetails(currentId))
+      .then((action) => {
+        if (action.type === "products/fetch-product-details/fulfilled") {
+          console.log("Fetched Product Details:", action.payload);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching product details:", error);
+      });
+  }
+
   // Fetch products whenever filters or sort change
   useEffect(() => {
-    dispatch(fetchFilteredProducts({ filterParams: filters, sortParams: sort }));
+    dispatch(
+      fetchFilteredProducts({ filterParams: filters, sortParams: sort })
+    );
   }, [dispatch, filters, sort]);
+
+  // show product details
+  useEffect(() => {
+    if (productDetails !== null) setShowProductDetails(true);
+  }, [productDetails]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-6 md:p-6">
@@ -81,10 +108,16 @@ const Listing = () => {
         <div className="p-4 border-b flex gap-4 items-center justify-between">
           <h2 className="text-lg font-extrabold">All Products</h2>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{productList.length} Products</span>
+            <span className="text-muted-foreground">
+              {productList.length} Products
+            </span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="flex items-center gap-1" variant="outline" size="sm">
+                <Button
+                  className="flex items-center gap-1"
+                  variant="outline"
+                  size="sm"
+                >
                   <LuArrowUpDown className="w-4 h-4" />
                   <span>Sort by</span>
                 </Button>
@@ -114,6 +147,7 @@ const Listing = () => {
               <ShopProductDisplay
                 key={productItem.id || index}
                 product={productItem}
+                handleProductDetails={handleProductDetails}
               />
             ))
           ) : (
@@ -121,6 +155,11 @@ const Listing = () => {
           )}
         </div>
       </div>
+      <ProductDetails
+        open={showProductDetails}
+        setOpen={setShowProductDetails}
+        productDetails={productDetails}
+      />
     </div>
   );
 };

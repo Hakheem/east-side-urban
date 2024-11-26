@@ -9,7 +9,7 @@ const initialState = {
   productDetails: null,
 };
 
-// Fetch products 
+// Fetch products
 export const fetchFilteredProducts = createAsyncThunk(
   "products/fetch",
   async ({ filterParams, sortParams }, thunkAPI) => {
@@ -28,7 +28,9 @@ export const fetchFilteredProducts = createAsyncThunk(
         query.append("sortBy", sortParams);
       }
 
-      const response = await axios.get(`http://localhost:5000/api/products/fetch?${query}`);
+      const response = await axios.get(
+        `http://localhost:5000/api/products/fetch?${query}`
+      );
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -41,7 +43,9 @@ export const fetchProductDetails = createAsyncThunk(
   "products/fetch-product-details",
   async (id, thunkAPI) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/products/${id}`);
+      const response = await axios.get(
+        `http://localhost:5000/api/products/get/${id}`
+      );
       return response.data;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data || error.message);
@@ -78,7 +82,7 @@ const shopProductsSlice = createSlice({
       })
       .addCase(fetchProductDetails.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.productDetails = action.payload;
+        state.productDetails = action.payload.product;
       })
       .addCase(fetchProductDetails.rejected, (state, action) => {
         state.isLoading = false;
