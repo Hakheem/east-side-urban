@@ -1,16 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdHome, IoMdMenu } from "react-icons/io";
+import { FaShoppingCart } from "react-icons/fa";
+import { FaUser } from "react-icons/fa";
+import { MdLogout } from "react-icons/md";
+import { Button } from "../ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "../../components/ui/sheet";
-import { Button } from "../ui/button";
-import { useSelector, useDispatch } from "react-redux";
-import { shopHeaderMenuItems } from "@/config/config";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,11 +18,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { FaShoppingCart } from "react-icons/fa";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { FaUser } from "react-icons/fa";
-import { MdLogout } from "react-icons/md";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useSelector, useDispatch } from "react-redux";
+import { shopHeaderMenuItems } from "@/config/config";
 import { logoutUser } from "@/store/auth/auth";
+import { fetchCartItems } from "@/store/shop/cartSlice";
+import CartWrapper from "./cartWrapper";
 
 function MenuItems({ closeSheet }) {
   return (
@@ -33,7 +33,7 @@ function MenuItems({ closeSheet }) {
           key={menuItem._id}
           to={menuItem.path}
           className="text-sm font-medium"
-          onClick={closeSheet} // Close the sidebar on link click
+          onClick={closeSheet}
         >
           {menuItem.label}
         </Link>
@@ -44,6 +44,8 @@ function MenuItems({ closeSheet }) {
 
 function RightContent() {
   const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.shopCart);
+  const [openCartSheet, setOpenCartSheet] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -51,15 +53,36 @@ function RightContent() {
     dispatch(logoutUser());
   }
 
+  // Fetch cart items when the user logs in
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(fetchCartItems(user.id));
+    }
+  }, [dispatch, user?.id]);
+
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
-      <Button variant="outline" size="icon">
-        <FaShoppingCart className="h-6 w-6" />
-        <span className="sr-only">Cart</span>
-      </Button>
+      {/* Cart Button */}
+      <Sheet open={openCartSheet} onOpenChange={(state) => setOpenCartSheet(state)}>
+        <Button
+          onClick={() => setOpenCartSheet(true)}
+          variant="outline"
+          size="icon"
+        >
+          <FaShoppingCart className="h-6 w-6" />
+          <span className="sr-only">Cart</span>
+        </Button>
+        <SheetContent className="w-full max-w-sm"> 
+          <CartWrapper
+            cartItems={cartItems && cartItems.length > 0 ? cartItems : []}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* User Avatar and Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className="bg-black cursor-pointer ">
+          <Avatar className="bg-black cursor-pointer">
             <AvatarFallback className="bg-black text-white font-extrabold">
               {user?.userName ? user.userName[0].toUpperCase() : "?"}
             </AvatarFallback>
@@ -92,11 +115,13 @@ const ShopHeader = () => {
   return (
     <header className="sticky top-0 z-50 w-full bg-background border-b">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
+        {/* Logo */}
         <Link to={"/home"} className="flex items-center gap-2">
           <IoMdHome className="h-6 w-6" />
           <span className="font-bold">East Side</span>
         </Link>
 
+        {/* Mobile Menu Button */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button
@@ -115,6 +140,7 @@ const ShopHeader = () => {
           </SheetContent>
         </Sheet>
 
+        {/* Desktop Menu */}
         <div className="hidden lg:block">
           <MenuItems />
         </div>

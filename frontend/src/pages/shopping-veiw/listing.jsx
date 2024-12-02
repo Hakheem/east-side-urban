@@ -18,12 +18,16 @@ import {
 import ShopProductDisplay from "./shopProductsDisplay";
 import { useSearchParams } from "react-router-dom";
 import ProductDetails from "./productDetails";
+import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
+import { toast } from "react-toastify";
+
 
 const Listing = () => {
   const dispatch = useDispatch();
   const { productList, productDetails, error } = useSelector(
     (state) => state.shopProducts
   );
+  const { user } = useSelector((state) => state.auth);
 
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState("price-lowtohigh");
@@ -57,6 +61,41 @@ const Listing = () => {
     sessionStorage.setItem("filters", JSON.stringify(filtersCopy));
   };
 
+  // handleProductDetails function
+  const handleProductDetails = (currentId) => {
+    dispatch(fetchProductDetails(currentId))
+      .then((action) => {
+        if (action.type === "products/fetch-product-details/fulfilled") {
+          console.log("Fetched Product Details:", action.payload);
+        }
+      })
+      .catch((error) => {
+        console.error("Error fetching product details:", error);
+      });
+  };
+
+  // Handle add to cart functionality
+  const handleAddToCart = (currentId) => {
+    if (!user?.id) return;
+
+    dispatch(
+      addToCart({
+        userId: user.id,
+        productId: currentId,
+        quantity: 1,
+      })
+    )
+      .then((data) => {
+        if (data?.payload.success) {
+          dispatch(fetchCartItems(user.id));
+          toast.success("Product added to cart");
+        }
+      })
+      .catch((error) => {
+        console.error("Error adding to cart:", error);
+      });
+  };
+
   // Load initial filters and sort from session storage
   useEffect(() => {
     setSort("price-lowtohigh");
@@ -76,19 +115,6 @@ const Listing = () => {
     setSearchParams(query);
   }, [filters, setSearchParams]);
 
-  // handleProductDetails function
-  function handleProductDetails(currentId) {
-    dispatch(fetchProductDetails(currentId))
-      .then((action) => {
-        if (action.type === "products/fetch-product-details/fulfilled") {
-          console.log("Fetched Product Details:", action.payload);
-        }
-      })
-      .catch((error) => {
-        console.error("Error fetching product details:", error);
-      });
-  }
-
   // Fetch products whenever filters or sort change
   useEffect(() => {
     dispatch(
@@ -96,7 +122,7 @@ const Listing = () => {
     );
   }, [dispatch, filters, sort]);
 
-  // show product details
+  // Show product details modal 
   useEffect(() => {
     if (productDetails !== null) setShowProductDetails(true);
   }, [productDetails]);
@@ -148,6 +174,7 @@ const Listing = () => {
                 key={productItem.id || index}
                 product={productItem}
                 handleProductDetails={handleProductDetails}
+                handleAddToCart={handleAddToCart}
               />
             ))
           ) : (

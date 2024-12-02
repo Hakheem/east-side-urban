@@ -51,15 +51,16 @@ const addToCart = async (req, res) => {
 
 // Fetch cart items
 const fetchCartItems = async (req, res) => {
+  console.log('fetchCartItems endpoint reached'); 
   try {
     const { userId } = req.params;
-
+    
     if (!userId) {
       return res.status(400).json({
         success: false,
         message: "User ID is required",
       });
-    }
+    }  
 
     const cart = await Cart.findOne({ userId }).populate({
       path: "items.productId",
