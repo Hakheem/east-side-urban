@@ -5,13 +5,48 @@ import {
   DialogContent,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
+import { setProductDetails } from "@/store/shop/shopProductsSlice";
 import { IoMdStar, IoMdStarHalf } from "react-icons/io";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
+
 
 const ProductDetails = ({ open, setOpen, productDetails }) => {
   if (!productDetails) return null;
 
+  const dispatch = useDispatch();
+  const { user } = useSelector(state=>state.auth)
+
+   // Handle add to cart functionality
+   const handleAddToCart = (currentId) => {
+    if (!user?.id) return;
+
+    dispatch(
+      addToCart({
+        userId: user.id,
+        productId: currentId,
+        quantity: 1,
+      })
+    )
+      .then((data) => {
+        if (data?.payload.success) {
+          dispatch(fetchCartItems(user.id));
+          toast.success("Product added to cart");
+        }
+      })
+      .catch((error) => {
+        console.error("Error adding to cart:", error);
+      });
+  };
+
+  function handleDialogClose(){
+    setOpen(false);
+    dispatch(setProductDetails())
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleDialogClose}>
       <DialogContent className="grid grid-cols-1 lg:grid-cols-2 overflow-auto lg:h-[35rem] gap-6 p-4 sm:p-6 lg:gap-8 sm:max-w-[90vw] lg:max-w-[70vw]">
         <div className="relative overflow-hidden rounded-lg">
           <img
@@ -60,7 +95,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
           </div>
 
           <div className="mt-4">
-            <Button className="w-full">Add to Cart</Button>
+            <Button className="w-full" onClick={()=> handleAddToCart(productDetails?._id)} >Add to Cart</Button>
           </div>
 
           <hr className="mt-6 h-[2px]" />

@@ -44,7 +44,7 @@ function MenuItems({ closeSheet }) {
 
 function RightContent() {
   const { user } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.shopCart);
+  const { cartItems  } = useSelector((state) => state.shopCart)
   const [openCartSheet, setOpenCartSheet] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -56,7 +56,7 @@ function RightContent() {
   // Fetch cart items when the user logs in
   useEffect(() => {
     if (user?.id) {
-      dispatch(fetchCartItems(user.id));
+      dispatch(fetchCartItems(user?.id));
     }
   }, [dispatch, user?.id]);
 
@@ -74,7 +74,7 @@ function RightContent() {
         </Button>
         <SheetContent className="w-full max-w-sm"> 
           <CartWrapper
-            cartItems={cartItems && cartItems.length > 0 ? cartItems : []}
+            cartItems={cartItems && cartItems.items && cartItems.items.length > 0 ? cartItems.items : []}
           />
         </SheetContent>
       </Sheet>

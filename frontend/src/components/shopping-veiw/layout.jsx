@@ -10,7 +10,7 @@ const ShopLayout = () => {
     <main className='flex flex-col w-full '>
 <Outlet/>
     </main>
-   </div>
+   </div> 
   )
 }
 

@@ -21,18 +21,21 @@ import ProductDetails from "./productDetails";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
 import { toast } from "react-toastify";
 
-
+ 
 const Listing = () => {
   const dispatch = useDispatch();
-  const { productList, productDetails, error } = useSelector(
+  const { productList, productDetails, error} = useSelector(
     (state) => state.shopProducts
   );
   const { user } = useSelector((state) => state.auth);
-
+  const { cartItems } = useSelector((state) => state.shopCart);
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState("price-lowtohigh");
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProductDetails, setShowProductDetails] = useState(false);
+
+console.log(cartItems);
+
 
   // Handle sorting changes
   const handleSort = (value) => {

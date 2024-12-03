@@ -51,7 +51,6 @@ const addToCart = async (req, res) => {
 
 // Fetch cart items
 const fetchCartItems = async (req, res) => {
-  console.log('fetchCartItems endpoint reached'); 
   try {
     const { userId } = req.params;
     

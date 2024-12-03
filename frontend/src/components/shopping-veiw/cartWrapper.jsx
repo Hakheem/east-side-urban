@@ -1,33 +1,44 @@
 import React from "react";
 import { Button } from "../ui/button";
-import CartContents from "./cartContents";
-import { SheetHeader, SheetTitle } from "../ui/sheet";
+import CartContents from "./CartContents";
+import { SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet";
 
 const CartWrapper = ({ cartItems }) => {
-  const total = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
- 
+  // Calculate the total cost of the cart
+  const total = cartItems.reduce(
+    (acc, item) =>
+      acc +
+      (item.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
+    0
+  );
+
   return (
-    <div className="sm:max-w-md p-4">
-      <SheetHeader >
-        <SheetTitle >Shopping Cart</SheetTitle>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <SheetHeader>
+        <SheetTitle>Shopping Cart</SheetTitle>
+        <SheetDescription>Your selected items</SheetDescription>
       </SheetHeader>
 
-      <div className="mt-8 space-y-4">
+      {/* Cart Items */}
+      <div className="flex-1 overflow-y-auto mt-4 space-y-4 pr-2">
         {cartItems && cartItems.length > 0 ? (
-          cartItems.map((item) => <CartContents key={item.id} cartItem={item} />)
+          cartItems.map((item) => (
+            <CartContents key={item.id} cartItem={item} />
+          ))
         ) : (
           <p>Your cart is empty</p>
         )}
       </div>
 
-      <div className="mt-8 space-y-4">
+      {/* Total Price and Checkout */}
+      <div className="mt-4 border-t pt-4">
         <div className="flex justify-between">
           <span className="font-bold">Total</span>
-          <span className="font-bold">$569</span> 
+          <span className="font-bold">${total.toFixed(2)}</span>
         </div>
+        <Button className="w-full mt-4">Checkout</Button>
       </div>
-
-      <Button className="w-full mt-6">Checkout</Button>
     </div>
   );
 };
