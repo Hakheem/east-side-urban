@@ -12,8 +12,12 @@ import banner_women from "./banner_women.png";
 import header_img from "./header_img.jpg";
 import heroBg from "./heroBg.png";
 import logo from "./logo.png";
+import accesoriesHeader from './accesoriesHeader.webP'
+import earing from './earing.webP'
 
 const images = {
+  earing,
+  accesoriesHeader,
   nikeLogo,
   timberlandLogo,
   adidasLogo,

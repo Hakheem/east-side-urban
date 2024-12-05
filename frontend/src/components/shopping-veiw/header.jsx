@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdHome, IoMdMenu } from "react-icons/io";
-import { FaShoppingCart } from "react-icons/fa";
-import { FaUser } from "react-icons/fa";
+import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { MdLogout } from "react-icons/md";
 import { Button } from "../ui/button";
 import {
@@ -24,19 +23,32 @@ import { shopHeaderMenuItems } from "@/config/config";
 import { logoutUser } from "@/store/auth/auth";
 import { fetchCartItems } from "@/store/shop/cartSlice";
 import CartWrapper from "./cartWrapper";
+import { Label } from "../ui/label";
 
-function MenuItems({ closeSheet }) {
+// Handles navigation and filter storage
+function handleNavigation(menuItem, navigate) {
+  sessionStorage.removeItem("filters");
+  const currentFilter =
+    menuItem.id !== "home" ? { category: [menuItem.id] } : null;
+
+  sessionStorage.setItem("filters", JSON.stringify(currentFilter));
+  navigate(menuItem.path);
+}
+
+function MenuItems({ closeSheet, navigate }) {
   return (
     <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center lg:flex-row gap-6">
       {shopHeaderMenuItems.map((menuItem) => (
-        <Link
+        <Label
           key={menuItem._id}
-          to={menuItem.path}
-          className="text-sm font-medium"
-          onClick={closeSheet}
+          className="text-sm font-medium cursor-pointer"
+          onClick={() => {
+            handleNavigation(menuItem, navigate);
+            closeSheet && closeSheet();
+          }}
         >
           {menuItem.label}
-        </Link>
+        </Label>
       ))}
     </nav>
   );
@@ -44,7 +56,7 @@ function MenuItems({ closeSheet }) {
 
 function RightContent() {
   const { user } = useSelector((state) => state.auth);
-  const { cartItems  } = useSelector((state) => state.shopCart)
+  const { cartItems } = useSelector((state) => state.shopCart);
   const [openCartSheet, setOpenCartSheet] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -63,18 +75,26 @@ function RightContent() {
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
       {/* Cart Button */}
-      <Sheet open={openCartSheet} onOpenChange={(state) => setOpenCartSheet(state)}>
+      <Sheet
+        open={openCartSheet}
+        onOpenChange={(state) => setOpenCartSheet(state)}
+      >
         <Button
           onClick={() => setOpenCartSheet(true)}
           variant="outline"
           size="icon"
+          aria-label="View Cart"
         >
           <FaShoppingCart className="h-6 w-6" />
           <span className="sr-only">Cart</span>
         </Button>
-        <SheetContent className="w-full max-w-sm"> 
+        <SheetContent className="w-full max-w-sm">
           <CartWrapper
-            cartItems={cartItems && cartItems.items && cartItems.items.length > 0 ? cartItems.items : []}
+            cartItems={
+              cartItems && cartItems.items && cartItems.items.length > 0
+                ? cartItems.items
+                : []
+            }
           />
         </SheetContent>
       </Sheet>
@@ -84,7 +104,7 @@ function RightContent() {
         <DropdownMenuTrigger asChild>
           <Avatar className="bg-black cursor-pointer">
             <AvatarFallback className="bg-black text-white font-extrabold">
-              {user?.userName ? user.userName[0].toUpperCase() : "?"}
+              {user?.userName ? user.userName[0].toUpperCase() : "G"}
             </AvatarFallback>
           </Avatar>
         </DropdownMenuTrigger>
@@ -93,12 +113,12 @@ function RightContent() {
             Logged in as {user?.userName || "Guest"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => navigate("/account")}>
-            <FaUser className="mr-2 h-4 w-4" /> Account
+          <DropdownMenuItem onClick={() => navigate("/account")} className='cursor-pointer' >
+            <FaUser className="mr-2 h-4 w-4 " /> Account
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={handleLogout}>
-            <MdLogout className="mr-2 h-4 w-4" /> Logout
+          <DropdownMenuItem onClick={handleLogout} className='cursor-pointer' >
+            <MdLogout className="mr-2 h-4 w-4 " /> Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -109,6 +129,7 @@ function RightContent() {
 const ShopHeader = () => {
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const navigate = useNavigate();
 
   const closeSheet = () => setIsSheetOpen(false);
 
@@ -128,6 +149,7 @@ const ShopHeader = () => {
               variant="outline"
               size="icon"
               className="lg:hidden"
+              aria-label="Toggle header menu"
               onClick={() => setIsSheetOpen(true)}
             >
               <IoMdMenu className="h-6 w-6" />
@@ -135,14 +157,14 @@ const ShopHeader = () => {
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full max-w-xs" side="left">
-            <MenuItems closeSheet={closeSheet} />
+            <MenuItems closeSheet={closeSheet} navigate={navigate} />
             <RightContent />
           </SheetContent>
         </Sheet>
 
         {/* Desktop Menu */}
         <div className="hidden lg:block">
-          <MenuItems />
+          <MenuItems navigate={navigate} />
         </div>
         <div className="hidden lg:block">
           <RightContent />
