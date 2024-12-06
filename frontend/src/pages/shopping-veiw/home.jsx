@@ -1,64 +1,95 @@
-import { Button } from '@/components/ui/button';
-import images from '@/assets/assets';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { PiDressLight, PiTShirtLight, PiBabyLight } from 'react-icons/pi';
-import { GiHeartNecklace, GiRunningShoe } from 'react-icons/gi';
-import { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchFilteredProducts } from '@/store/shop/shopProductsSlice';
-import ShopProductsDisplay from './shopProductsDisplay';
-import { useNavigate } from 'react-router-dom';
+import { Button } from "@/components/ui/button";
+import images from "@/assets/assets";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { PiDressLight, PiTShirtLight, PiBabyLight } from "react-icons/pi";
+import { GiHeartNecklace, GiRunningShoe } from "react-icons/gi";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchFilteredProducts,
+  fetchProductDetails,
+} from "@/store/shop/shopProductsSlice";
+import ShopProductsDisplay from "./shopProductsDisplay";
+import { useNavigate } from "react-router-dom";
+import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
+import { toast } from "react-toastify";
+import ProductDetails from "./productDetails";
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const dispatch = useDispatch();
-  const { productList } = useSelector((state) => state.shopProducts);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const { productList, productDetails } = useSelector(
+    (state) => state.shopProducts
+  );
+  const { user } = useSelector((state) => state.auth);
+  const [showProductDetails, setShowProductDetails] = useState(false);
 
   const slides = [
     {
-      image: images.heroBg,
-      text: 'Elevate Your Wardrobe with the Latest Trends',
-      position: 'center',
+      image: images.hero12,
+      text: "Empower your look with our stylish women's collection. Fashion-forward designs for every occasion.",
     },
     {
-      image: images.header_img,
-      text: 'Step Out in Style: Uncover Your Next Favorite Pair',
-      position: 'start',
+      image: images.men1,
+      text: "Elevate your style with our men's collection. Bold designs, quality fabrics, and the perfect fit.",
     },
     {
-      image: images.earing,
-      text: 'Accessorize Your Journey: Shop Unique Finds',
-      position: 'end',
+      image: images.hero2,
+      text: "Unleash your style with our chic women’s collection. Effortless elegance, everyday comfort.",
     },
   ];
 
   const categories = [
-    { id: 'men', label: 'Men', icon: PiTShirtLight },
-    { id: 'women', label: 'Women', icon: PiDressLight },
-    { id: 'kids', label: 'Kids', icon: PiBabyLight },
-    { id: 'accessories', label: 'Accessories', icon: GiHeartNecklace },
-    { id: 'footwear', label: 'Footwear', icon: GiRunningShoe },
+    { id: "men", label: "Men", icon: PiTShirtLight },
+    { id: "women", label: "Women", icon: PiDressLight },
+    { id: "kids", label: "Kids", icon: PiBabyLight },
+    { id: "accessories", label: "Accessories", icon: GiHeartNecklace },
+    { id: "footwear", label: "Footwear", icon: GiRunningShoe },
   ];
 
   const brands = [
-    { id: 'nike', label: 'Nike', logo: images.nikeLogo },
-    { id: 'adidas', label: 'Adidas', logo: images.adidasLogo },
-    { id: 'puma', label: 'Puma', logo: images.pumaLogo },
-    { id: 'timberland', label: 'Timberland', logo: images.timberlandLogo },
-    { id: 'vans', label: 'Vans', logo: images.vansLogo },
-    { id: 'converse', label: 'Converse', logo: images.converseLogo },
-    { id: 'new_balance', label: 'New Balance', logo: images.nbLogo },
-    { id: 'formal', label: 'Formal', logo: images.clarksLogo },
+    { id: "nike", label: "Nike", logo: images.nikeLogo },
+    { id: "adidas", label: "Adidas", logo: images.adidasLogo },
+    { id: "puma", label: "Puma", logo: images.pumaLogo },
+    { id: "timberland", label: "Timberland", logo: images.timberlandLogo },
+    { id: "vans", label: "Vans", logo: images.vansLogo },
+    { id: "converse", label: "Converse", logo: images.converseLogo },
+    { id: "new_balance", label: "New Balance", logo: images.nbLogo },
+    { id: "formal", label: "Formal", logo: images.clarksLogo },
   ];
 
-function handleNavigationToListingPage(getCurrentItem, section){
-  sessionStorage.removeItem('filters')
-const currentFilter = { [section] : [getCurrentItem.id] }
-sessionStorage.setItem('filters', JSON.stringify(currentFilter) )
-navigate(`/listing`)
-}
+  function handleNavigationToListingPage(getCurrentItem, section) {
+    sessionStorage.removeItem("filters");
+    const currentFilter = { [section]: [getCurrentItem.id] };
+    sessionStorage.setItem("filters", JSON.stringify(currentFilter));
+    navigate(`/listing`);
+  }
 
+  const handleProductDetails = (currentId) => {
+    dispatch(fetchProductDetails(currentId));
+  };
+
+  const handleAddToCart = (currentId) => {
+    if (!user?.id) return;
+
+    dispatch(
+      addToCart({
+        userId: user.id,
+        productId: currentId,
+        quantity: 1,
+      })
+    )
+      .then((data) => {
+        if (data?.payload.success) {
+          dispatch(fetchCartItems(user.id));
+          toast.success("Product added to cart");
+        }
+      })
+      .catch((error) => {
+        console.error("Error adding to cart:", error);
+      });
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -68,28 +99,28 @@ navigate(`/listing`)
     return () => clearInterval(interval);
   }, []);
 
-
-
   useEffect(() => {
     dispatch(
       fetchFilteredProducts({
         filterParams: {},
-        sortParams: 'price-lowtohigh',
+        sortParams: "price-lowtohigh",
       })
     );
   }, [dispatch]);
 
-  
+  useEffect(() => {
+    if (productDetails !== null) setShowProductDetails(true);
+  }, [productDetails]);
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <div className="relative w-full h-[600px] overflow-hidden">
+      <div className="relative w-full h-[600px] fadeIn overflow-hidden">
         {slides.map((slide, index) => (
           <div
             key={index}
-            className={`absolute inset-0 transition-opacity duration-1000 ${
-              index === currentSlide ? 'opacity-100' : 'opacity-0'
+            className={`absolute inset-0 transition-opacity ease-in duration-2000 ${
+              index === currentSlide ? "opacity-100" : "opacity-0"
             }`}
           >
             <img
@@ -97,25 +128,22 @@ navigate(`/listing`)
               alt={`Slide ${index + 1}`}
               className="w-full h-full object-cover object-center"
             />
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black bg-opacity-15"></div>
+
+            {/* Text container */}
             <div
-              className={`absolute w-[30%] text-white text-lg font-bold bg-black/40 p-2 rounded-md ${
-                slide.position === 'start'
-                  ? 'top-1/2 left-[calc(8px+4%)] -translate-y-1/2'
-                  : slide.position === 'center'
-                  ? 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center'
-                  : 'top-1/2 right-[calc(8px+4%)] -translate-y-1/2'
-              }`}
+              className={` heroTxt absolute top-[calc(50%-3rem)] right-[calc(8px+4%)] transform -translate-y-1/2 text-white text-[2.3rem] font-bold p-2 leading-snug`}
+              style={{ width: "45%" }}
             >
               {slide.text}
+            </div>
+
+            {/* Button container */}
+            <div className="absolute bottom-[11rem] right-[24rem]  w-[20%] ">
               <Button
-                // variant="outline"
-                className={`mt-4 ${
-                  slide.position === 'start'
-                    ? 'text-left'
-                    : slide.position === 'center'
-                    ? 'mx-auto'
-                    : 'ml-auto'
-                }`}
+                className="w-full font-semibold h-12 "
+                onClick={handleNavigationToListingPage}
               >
                 Shop Now
               </Button>
@@ -150,12 +178,16 @@ navigate(`/listing`)
       {/* Categories Section */}
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="font-bold text-2xl text-center mb-8">Shop by Category</h2>
+          <h2 className="font-bold text-2xl text-center mb-8">
+            Shop by Category
+          </h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {categories.map((category) => (
               <div
                 key={category.id}
-                onClick={()=>handleNavigationToListingPage(category, 'category')}
+                onClick={() =>
+                  handleNavigationToListingPage(category, "category")
+                }
                 className="cursor-pointer hover:shadow-lg transition-shadow bg-white p-6 rounded-lg flex flex-col items-center"
               >
                 <category.icon className="w-12 h-12 mb-4 text-primary" />
@@ -174,8 +206,7 @@ navigate(`/listing`)
             {brands.map((brand) => (
               <div
                 key={brand.id}
-                onClick={()=>handleNavigationToListingPage(brand, 'brand')}
-
+                onClick={() => handleNavigationToListingPage(brand, "brand")}
                 className="cursor-pointer flex flex-col items-center"
               >
                 <img
@@ -190,21 +221,32 @@ navigate(`/listing`)
         </div>
       </section>
 
-
-      {/* display products */}
-      <section className="py-12  ">
-      <div className="container mx-auto">
-          <h2 className="font-bold text-2xl text-center mb-8"> Featured Products </h2>
+      {/* Products Display Section */}
+      <section className="py-12">
+        <div className="container mx-auto">
+          <h2 className="font-bold text-2xl text-center mb-8">
+            Featured Products
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 sm:grid-cols-8 gap-6">
-{
-  productList && productList.length > 0 ?
-  productList.map((productItem) => ( <ShopProductsDisplay product={productItem} />)
-     
-  ) : null
-}
+            {productList && productList.length > 0
+              ? productList.map((productItem) => (
+                  <ShopProductsDisplay
+                    handleProductDetails={handleProductDetails}
+                    handleAddToCart={handleAddToCart}
+                    product={productItem}
+                  />
+                ))
+              : null}
           </div>
-          </div>
+        </div>
       </section>
+
+      {/* Product Details Modal */}
+      <ProductDetails
+        open={showProductDetails}
+        setOpen={setShowProductDetails}
+        productDetails={productDetails}
+      />
     </div>
   );
 };

@@ -12,8 +12,13 @@ import banner_women from "./banner_women.png";
 import header_img from "./header_img.jpg";
 import heroBg from "./heroBg.png";
 import logo from "./logo.png";
-import accesoriesHeader from './accesoriesHeader.webP'
-import earing from './earing.webP'
+import accesoriesHeader from "./accesoriesHeader.webP";
+import earing from "./earing.webP";
+import accesories from "./accesories.webP";
+import hero1 from "./hero1.webP";
+import hero2 from "./hero2.webP";
+import hero12 from "./hero12.png";
+import men1 from "./men1.webP";
 
 const images = {
   earing,
@@ -32,6 +37,11 @@ const images = {
   header_img,
   heroBg,
   logo,
+  hero1,
+  hero2,
+  hero12,
+  men1,
+  accesories,
 };
 
 export default images;

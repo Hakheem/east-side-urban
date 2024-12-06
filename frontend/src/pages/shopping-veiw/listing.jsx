@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Filter from "./Filter";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, } from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { LuArrowUpDown } from "react-icons/lu";
@@ -124,7 +119,7 @@ console.log(cartItems);
       fetchFilteredProducts({ filterParams: filters, sortParams: sort })
     );
   }, [dispatch, filters, sort]);
-
+ 
   // Show product details modal 
   useEffect(() => {
     if (productDetails !== null) setShowProductDetails(true);
