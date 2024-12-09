@@ -1,0 +1,16 @@
+$primary-color: cyan; 
+
+@import 'loaders.css/src/animations/ball-scale-multiple.scss';
+
+.loader {
+  &-hidden {
+    display: none;
+  }
+
+  &-active {
+    display: block;
+    .ball-scale-multiple > div {
+      background-color: $primary-color;
+    }
+  }
+}

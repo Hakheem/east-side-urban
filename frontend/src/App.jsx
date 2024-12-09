@@ -19,7 +19,7 @@ import Account from "./pages/shopping-veiw/account";
 import CheckAuth from "./components/common/CheckAuth";
 import Unauthorised from "./pages/unauthorised/Unauthorised";
 import { Skeleton } from "@/components/ui/skeleton";
-// import Loader from "./components/Loader";
+import CustomLoader from "./components/ui/loader";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -34,7 +34,7 @@ function App() {
   if (isLoading) {
     return (
       <div className="m-auto ">
-      <Skeleton />
+      <CustomLoader />
       </div>
     );
   }

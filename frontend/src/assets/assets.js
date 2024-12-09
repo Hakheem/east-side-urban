@@ -19,8 +19,12 @@ import hero1 from "./hero1.webP";
 import hero2 from "./hero2.webP";
 import hero12 from "./hero12.png";
 import men1 from "./men1.webP";
+import profile_icon from './profile_icon.png'
+import account from './account.webp'
 
 const images = {
+  profile_icon,
+  account,
   earing,
   accesoriesHeader,
   nikeLogo,

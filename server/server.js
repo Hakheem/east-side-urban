@@ -6,6 +6,8 @@ const authRouter = require("./routes/auth/AuthRoutes");
 const adminProductsRouter = require('./routes/admin/productRoutes');
 const shopProductsRouter = require('./routes/shop/shopProductRoutes');
 const CartRouter = require('./routes/shop/CartRoutes')
+const AddressRouter = require('./routes/shop/addressRoutes');
+
 
 
 const app = express();
@@ -35,12 +37,13 @@ app.use(
 
 app.options("*", cors());
 
-app.use(cookieParser());
+app.use(cookieParser()); 
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use('/api/admin/products', adminProductsRouter);
 app.use('/api/products', shopProductsRouter);
 app.use('/api/cart', CartRouter);
+app.use('/api/address', AddressRouter );
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
