@@ -20,9 +20,11 @@ import hero2 from "./hero2.webP";
 import hero12 from "./hero12.png";
 import men1 from "./men1.webP";
 import profile_icon from './profile_icon.png'
+import cover_photo from './cover_photo.png'
 import account from './account.webp'
 
 const images = {
+  cover_photo,
   profile_icon,
   account,
   earing,

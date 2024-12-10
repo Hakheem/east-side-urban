@@ -87,6 +87,7 @@ function RightContent() {
         </Button>
         <SheetContent className="w-full max-w-sm">
           <CartWrapper
+          setOpenCartSheet={setOpenCartSheet}
             cartItems={cartItems?.items?.length > 0 ? cartItems.items : []}
           />
         </SheetContent>

@@ -2,8 +2,9 @@ import React from "react";
 import { Button } from "../ui/button";
 import CartContents from "./CartContents";
 import { SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet";
+import { useNavigate } from "react-router-dom";
 
-const CartWrapper = ({ cartItems }) => {
+const CartWrapper = ({ cartItems, setOpenCartSheet }) => {
   // Calculate the total cost of the cart
   const total = cartItems.reduce(
     (acc, item) =>
@@ -11,6 +12,8 @@ const CartWrapper = ({ cartItems }) => {
       (item.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
     0
   );
+
+  const navigate = useNavigate()
 
   return (
     <div className="flex flex-col h-full">
@@ -37,7 +40,11 @@ const CartWrapper = ({ cartItems }) => {
           <span className="font-bold">Total</span>
           <span className="font-bold">${total.toFixed(2)}</span>
         </div>
-        <Button className="w-full mt-4">Checkout</Button>
+        <Button 
+        onClick={()=>{ 
+          navigate('/checkout')
+           setOpenCartSheet(false)} }
+           className="w-full mt-4">Checkout</Button>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ const {
   deleteAddress,
 } = require("../../controllers/shop/AddressController");
 
-const router = express.Router(); 
+const router = express.Router();
 
 router.post("/add", addAddress);
 router.get("/get/:userId", fetchAddresses);
