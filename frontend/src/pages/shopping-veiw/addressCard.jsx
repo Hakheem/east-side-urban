@@ -1,15 +1,34 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import React from "react";
 
 const AddressCard = ({
   addressInfo,
   handleDeleteAddress,
   handleEditAddress,
+  setSelectedAddress,
 }) => {
   return (
-    <Card className="shadow-lg border border-gray-300 rounded-lg bg-white">
+    <Card
+      onClick={setSelectedAddress ? () => setSelectedAddress(addressInfo) : null}
+      className="shadow-lg border border-gray-300 rounded-lg bg-white relative"
+    >
+      {/* Absolute Select Button */}
+      {setSelectedAddress && (
+        <Button
+          className="absolute top-2 right-2 z-10"
+          variant="outline"
+          size="sm"
+          onClick={(e) => {
+            e.stopPropagation(); 
+            setSelectedAddress(addressInfo);
+          }}
+        >
+          Select
+        </Button>
+      )}
+      
       <CardContent className="grid p-6 gap-4">
         <div className="space-y-2">
           <Label className="block font-bold text-md text-gray-700">
@@ -44,7 +63,7 @@ const AddressCard = ({
           </Label>
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between p-3 ">
+      <CardFooter className="flex justify-between p-3">
         <Button onClick={() => handleEditAddress(addressInfo)}>Edit</Button>
         <Button
           variant="destructive"

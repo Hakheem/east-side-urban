@@ -1,6 +1,7 @@
 const paypal = require('../../helpers/paypal');
 const Orders = require('../../models/Orders');
 
+
 const createOrder = async (req, res) => {
   try {
     const {
@@ -13,12 +14,18 @@ const createOrder = async (req, res) => {
       totalAmount,
       orderDate,
       orderUpdateDate,
+      paymentId,
+      payerId,
     } = req.body;
+
+    if (!userId || !cartItems || !totalAmount) {
+      return res.status(400).json({ success: false, message: 'Invalid input data.' });
+    }
 
     const payment_json = {
       intent: 'sale',
       payer: {
-        payment_method: paymentMethod,
+        payment_method: "paypal",
       },
       redirect_urls: {
         return_url: 'http://localhost:5173/paypal-return',
@@ -46,22 +53,39 @@ const createOrder = async (req, res) => {
 
     paypal.payment.create(payment_json, async (error, paymentCheck) => {
       if (error) {
-        console.error(error);
+        console.log(error);
         return res.status(500).json({
           success: false,
           message: 'Error while creating payment.',
         });
       }
 
-      const approvalUrl = paymentCheck.links.find(
+      const newlyCreatedOrder = new Orders({
+        userId,
+        cartItems,
+        orderStatus,
+        addressInfo,
+        paymentMethod,
+        paymentStatus,
+        totalAmount,
+        orderDate,
+        orderUpdateDate,
+        paymentId,
+        payerId,
+      });
+
+      await newlyCreatedOrder.save();
+
+      const approvalUrl = paymentCheck.links?.find(
         (link) => link.rel === 'approval_url'
-      )?.href; 
+      )?.href;
 
       if (approvalUrl) {
-        return res.status(200).json({
+        return res.status(201).json({
           success: true,
           message: 'Payment created successfully.',
           approvalUrl,
+          orderId: newlyCreatedOrder._id,
         });
       } else {
         return res.status(500).json({
@@ -79,16 +103,21 @@ const createOrder = async (req, res) => {
   }
 };
 
+
 const capturePayment = async (req, res) => {
   try {
     const { paymentId, payerId } = req.body;
+
+    if (!paymentId || !payerId) {
+      return res.status(400).json({ success: false, message: 'Missing payment ID or payer ID.' });
+    }
 
     paypal.payment.execute(
       paymentId,
       { payer_id: payerId },
       async (error, payment) => {
         if (error) {
-          console.error(error.response);
+          console.error(error?.response || error);
           return res.status(500).json({
             success: false,
             message: 'Error while capturing payment.',
@@ -97,7 +126,7 @@ const capturePayment = async (req, res) => {
 
         if (payment.state === 'approved') {
           const order = new Orders({
-            userId: payment.transactions[0].related_resources[0].sale.id,
+            userId: payment.payer.payer_info.payer_id,
             cartItems: payment.transactions[0].item_list.items,
             orderStatus: 'Completed',
             addressInfo: payment.payer.payer_info.shipping_address,
