@@ -5,7 +5,7 @@ const initialState = {
   approvalUrl: null,
   isLoading: false,
   orderId: null,
-  error: null,  // Adding error field to store errors globally
+  error: null,  
 };
 
 export const createOrder = createAsyncThunk(
@@ -21,18 +21,27 @@ export const createOrder = createAsyncThunk(
   }
 );
 
+
 export const capturePayment = createAsyncThunk(
   '/order/capturePayment',
-  async (paymentData, { rejectWithValue }) => {
+  async ({ paymentId, payerId, orderId }, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/orders/capture', paymentData);
-      return response.data;
+      const { data } = await axios.post(`http://localhost:5000/api/orders/capture`, {
+        paymentId,
+        payerId,
+        orderId,
+      });
+
+      return data;
     } catch (error) {
-      // Use rejectWithValue to pass error message or status
-      return rejectWithValue(error.response ? error.response.data : error.message);
+      return rejectWithValue({
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || 'Error capturing payment.',
+      });
     }
   }
 );
+
 
 const orderSlice = createSlice({
   name: 'orderSlice',
@@ -54,12 +63,12 @@ const orderSlice = createSlice({
         state.isLoading = false;
         state.approvalUrl = action.payload.approvalUrl;
         state.orderId = action.payload.orderId;
+        sessionStorage.setItem('currentOrderId', JSON.stringify(action.payload.orderId ))
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.isLoading = false;
         state.approvalUrl = null;
         state.orderId = null;
-        // Store the error message if the order creation fails
         state.error = action.payload || "Error creating order";
       })
       // Handle capturePayment

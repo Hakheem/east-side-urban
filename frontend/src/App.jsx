@@ -20,6 +20,10 @@ import CheckAuth from "./components/common/CheckAuth";
 import Unauthorised from "./pages/unauthorised/Unauthorised";
 import { Skeleton } from "@/components/ui/skeleton";
 import CustomLoader from "./components/ui/loader";
+import PaypalReturn from "./pages/shopping-veiw/Paypal/PaypalReturn";
+import PaypalCancel from "./pages/shopping-veiw/Paypal/PaypalCancel";
+import PaymentSuccess from "./pages/shopping-veiw/Paypal/payment-success";
+import PaymentFailure from "./pages/shopping-veiw/Paypal/payment-failure";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -83,6 +87,9 @@ function App() {
           <Route path="listing" element={<Listing />} />
           <Route path="checkout" element={<Checkout />} />
           <Route path="account" element={<Account />} />
+          <Route path="paypal-return" element={<PaypalReturn />} />
+          <Route path="payment-success" element={<PaymentSuccess />} />
+          <Route path="payment-failure" element={<PaymentFailure />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

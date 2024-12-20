@@ -4,13 +4,15 @@ import Address from './address';
 import CartContents from '@/components/shopping-veiw/cartContents';
 import { Button } from '@/components/ui/button';
 import images from '@/assets/assets';
-import { createOrder } from '@/store/shop/shopOrdersSlice';
+import { createOrder, capturePayment } from '@/store/shop/shopOrdersSlice';
 
 const Checkout = () => {
   const { cartItems = { items: [] } } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
 
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [paymentStarted, setpaymentStarted] = useState(false)
+  const {approvalUrl} = useSelector((state)=> state.shopOrder)
   const dispatch = useDispatch()
 
 
@@ -23,6 +25,7 @@ const Checkout = () => {
   const initiatePaypalPayment = () => {
     const orderData = {
       userId: user?.id,
+      cartId: cartItems?._id,
       cartItems: cartItems.items.map((item) => ({
         productId: item?.productId,
         title: item?.title,
@@ -44,12 +47,19 @@ const Checkout = () => {
     .unwrap()
     .then((data) => {
       console.log("Order created successfully:", data);
+      setpaymentStarted(true)
     })
     .catch((error) => {
       console.error("Error creating order:", error);
+      setpaymentStarted(false)
     });
 
   };
+
+if (approvalUrl) {
+  window.location.href = approvalUrl;
+}
+
 
   return (
     <div className="flex flex-col">

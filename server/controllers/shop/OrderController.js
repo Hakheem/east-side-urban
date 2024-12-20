@@ -1,6 +1,7 @@
 const paypal = require('../../helpers/paypal');
 const Orders = require('../../models/Orders');
-
+const Cart = require('../../models/Cart');
+const { Types } = require('mongoose');
 
 const createOrder = async (req, res) => {
   try {
@@ -16,12 +17,15 @@ const createOrder = async (req, res) => {
       orderUpdateDate,
       paymentId,
       payerId,
+      cartId,
     } = req.body;
 
+    // Validate required fields
     if (!userId || !cartItems || !totalAmount) {
-      return res.status(400).json({ success: false, message: 'Invalid input data.' });
+      return res.status(400).json({ success: false, message: 'Invalid input data. Please ensure userId, cartItems, and totalAmount are provided.' });
     }
 
+    // Set up PayPal payment JSON
     const payment_json = {
       intent: 'sale',
       payer: {
@@ -51,15 +55,18 @@ const createOrder = async (req, res) => {
       ],
     };
 
+    // Create PayPal payment
     paypal.payment.create(payment_json, async (error, paymentCheck) => {
       if (error) {
-        console.log(error);
+        console.error('PayPal Error:', error);
         return res.status(500).json({
           success: false,
-          message: 'Error while creating payment.',
+          message: 'Error while creating PayPal payment.',
+          error: error.response || error,
         });
       }
 
+      // Create the new order
       const newlyCreatedOrder = new Orders({
         userId,
         cartItems,
@@ -72,10 +79,12 @@ const createOrder = async (req, res) => {
         orderUpdateDate,
         paymentId,
         payerId,
+        cartId,
       });
 
       await newlyCreatedOrder.save();
 
+      // Find approval URL
       const approvalUrl = paymentCheck.links?.find(
         (link) => link.rel === 'approval_url'
       )?.href;
@@ -95,70 +104,95 @@ const createOrder = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Create Order Error:', error);
     res.status(500).json({
       success: false,
       message: 'Error while creating order.',
+      error: error.message,
     });
   }
 };
-
 
 const capturePayment = async (req, res) => {
   try {
-    const { paymentId, payerId } = req.body;
+    const { paymentId, payerId, orderId } = req.body;
 
-    if (!paymentId || !payerId) {
-      return res.status(400).json({ success: false, message: 'Missing payment ID or payer ID.' });
+    if (!paymentId || !payerId || !orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: paymentId, payerId, or orderId.',
+      });
     }
 
-    paypal.payment.execute(
-      paymentId,
-      { payer_id: payerId },
-      async (error, payment) => {
-        if (error) {
-          console.error(error?.response || error);
-          return res.status(500).json({
-            success: false,
-            message: 'Error while capturing payment.',
-          });
-        }
+    // Clean the orderId (remove extra quotes)
+    const cleanedOrderId = orderId.replace(/['"]+/g, '');
 
-        if (payment.state === 'approved') {
-          const order = new Orders({
-            userId: payment.payer.payer_info.payer_id,
-            cartItems: payment.transactions[0].item_list.items,
-            orderStatus: 'Completed',
-            addressInfo: payment.payer.payer_info.shipping_address,
-            paymentMethod: payment.payer.payment_method,
-            paymentStatus: payment.state,
-            totalAmount: payment.transactions[0].amount.total,
-            orderDate: new Date(),
-            orderUpdateDate: new Date(),
-          });
+    // Check if the cleaned orderId is a valid length (24 characters for ObjectId)
+    if (cleanedOrderId.length !== 24) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid orderId format.',
+      });
+    }
 
-          await order.save();
+    // Find the order by its cleaned ID
+    const order = await Orders.findById(cleanedOrderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found.',
+      });
+    }
 
-          res.status(200).json({
-            success: true,
-            message: 'Payment captured and order created successfully.',
-            order,
-          });
-        } else {
-          res.status(400).json({
-            success: false,
-            message: 'Payment not approved.',
-          });
-        }
+    // Execute the PayPal payment capture
+    paypal.payment.execute(paymentId, { payer_id: payerId }, async (error, payment) => {
+      if (error) {
+        console.error('PayPal Error:', error.response || error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error capturing PayPal payment.',
+          error: error.response || error,
+        });
       }
-    );
+
+      if (payment.state === 'approved') {
+        order.paymentStatus = 'paid';
+        order.orderStatus = 'confirmed';
+        order.paymentId = paymentId;
+        order.payerId = payerId;
+
+        // Find and clear the user's cart
+        const cart = await Cart.findOne({ userId: order.userId });
+        if (cart) {
+          // Clear the cart items
+          cart.items = [];  // This empties the cart
+          await cart.save();
+        }
+
+        await order.save();
+
+        return res.status(200).json({
+          success: true,
+          message: 'Payment captured successfully and cart reset.',
+          order,
+        });
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: 'Payment not approved.',
+        });
+      }
+    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
+    console.error('Capture Payment Error:', error);
+    return res.status(500).json({
       success: false,
-      message: 'Error occurred while capturing payment.',
+      message: 'Internal server error while capturing payment.',
+      error: error.message,
     });
   }
 };
+
+
 
 module.exports = { createOrder, capturePayment };
