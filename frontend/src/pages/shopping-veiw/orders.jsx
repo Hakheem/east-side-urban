@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger, DialogContent } from "@/components/ui/dialog";
@@ -10,9 +10,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDispatch, useSelector } from "react-redux";
+import { getAllOrdersByUserId, getOrderDetails, resetOrderDetails } from "@/store/shop/shopOrdersSlice";
+import { Badge } from "@/components/ui/badge";
+import OrderDetails from "./orderDetails";
 
 const Orders = () => {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { orderList, orderDetails } = useSelector((state) => state.shopOrder);
+
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(getAllOrdersByUserId(user.id));
+    }
+  }, [dispatch, user?.id]);
+
+  useEffect(() => {
+    if (selectedOrderId) {
+      dispatch(getOrderDetails(selectedOrderId));
+      setOpenDetailsDialog(true);
+    }
+  }, [selectedOrderId, dispatch]);
+
+  const handleViewDetails = (orderId) => {
+    setSelectedOrderId(orderId);
+  };
+
+  // Sort orders from latest to oldest (non-mutating)
+  const sortedOrders = orderList ? [...orderList].sort((a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)) : [];
 
   return (
     <Card>
@@ -33,73 +62,44 @@ const Orders = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Example row */}
-            <TableRow>
-              <TableCell className="font-medium">INV001</TableCell>
-              <TableCell>22/22/2222</TableCell>
-              <TableCell>On transit</TableCell>
-              <TableCell>$250.00</TableCell>
-              <TableCell>
-                <Dialog open={openDetailsDialog} onOpenChange={setOpenDetailsDialog}>
-                  <DialogTrigger asChild>
-                    <Button>View Details</Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <div className="space-y-6">
-                      <h2 className="text-lg font-bold">Order Details</h2>
-
-                      {/* Order Info */}
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">Order ID</p>
-                        <p>INV001</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">Order Date</p>
-                        <p>22/22/2222</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">Status</p>
-                        <p>On transit</p>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">Amount</p>
-                        <p>$250.00</p>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold">Items Delivered</h3>
-                        <ul className="mt-2 space-y-1">
-                          <li className="flex justify-between">
-                            <span>Item One</span>
-                            <span>$150.00</span>
-                          </li>
-                          <li className="flex justify-between">
-                            <span>Item Two</span>
-                            <span>$100.00</span>
-                          </li>
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className="font-semibold">Delivery Address</h3>
-                        <div className="mt-2 text-muted-foreground">
-                          <p>Name: John Doe</p>
-                          <p>Address: 123 Main St</p>
-                          <p>City: Springfield</p>
-                          <p>Zipcode: 12345</p>
-                          <p>Phone: 123-456-7890</p>
-                          <p>Notes: Leave at the front door</p>
-                        </div>
-                      </div>
-
-                      <Button className="mt-4" onClick={() => setOpenDetailsDialog(false)}>
-                        Close
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </TableCell>
-            </TableRow>
+            {sortedOrders?.length > 0 ? (
+              sortedOrders.map((orderItem) => (
+                <TableRow key={orderItem?._id}>
+                  <TableCell className="font-medium">{orderItem?._id}</TableCell>
+                  <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`py-1 px-3 ${orderItem?.orderStatus === "confirmed" ? "bg-green-500" : "bg-black"}`}
+                    >
+                      {orderItem?.orderStatus}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{orderItem?.totalAmount}</TableCell>
+                  <TableCell>
+                    <Dialog open={openDetailsDialog} onOpenChange={() => {
+                      setOpenDetailsDialog(false);
+                      dispatch(resetOrderDetails());
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button onClick={() => handleViewDetails(orderItem?._id)}>
+                          View Details
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        {/* Pass orderDetails to OrderDetails component */}
+                        <OrderDetails orderDetails={orderDetails} />
+                      </DialogContent>
+                    </Dialog>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan="5" className="text-center">
+                  No orders found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

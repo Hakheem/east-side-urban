@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 
 const initialFormData = {
   orderStatus: '',
-};
+}; 
 function updateOrderStatus(event) {
     event.preventDefault;
 }

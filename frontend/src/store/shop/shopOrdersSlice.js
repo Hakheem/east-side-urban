@@ -6,6 +6,8 @@ const initialState = {
   isLoading: false,
   orderId: null,
   error: null,  
+  orderList: [],
+  orderDetails: null,
 };
 
 export const createOrder = createAsyncThunk(
@@ -15,7 +17,6 @@ export const createOrder = createAsyncThunk(
       const response = await axios.post('http://localhost:5000/api/orders/create', orderData);
       return response.data;
     } catch (error) {
-      // Use rejectWithValue to pass error message or status
       return rejectWithValue(error.response ? error.response.data : error.message);
     }
   }
@@ -43,6 +44,39 @@ export const capturePayment = createAsyncThunk(
 );
 
 
+export const getAllOrdersByUserId = createAsyncThunk(
+  '/order/get-orders',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const { data } = await axios.get(`http://localhost:5000/api/orders/list/${userId}`
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || 'Error capturing payment.',
+      });
+    }
+  }
+);
+
+export const getOrderDetails = createAsyncThunk(
+  '/order/get-order-details',
+  async (id, { rejectWithValue }) => {
+    try {
+
+      const { data } = await axios.get(`http://localhost:5000/api/orders/details/${id}`
+      );
+      return data;
+    } catch (error) {
+      return rejectWithValue({
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || 'Error capturing payment.',
+      });
+    }
+  }
+);
+
 const orderSlice = createSlice({
   name: 'orderSlice',
   initialState,
@@ -51,7 +85,11 @@ const orderSlice = createSlice({
       state.approvalUrl = null;
       state.orderId = null;
       state.error = null;
+    },
+    resetOrderDetails:(state, action)=>{
+state.orderDetails = null;
     }
+
   },
   extraReducers: (builder) => {
     builder
@@ -78,17 +116,41 @@ const orderSlice = createSlice({
       })
       .addCase(capturePayment.fulfilled, (state, action) => {
         state.isLoading = false;
-        // Assuming 'orders' exists and should hold the successful order
-        state.orders = state.orders || [];  // Initialize if it's undefined
+        state.orders = state.orders || [];  
         state.orders.push(action.payload.order);
       })
       .addCase(capturePayment.rejected, (state, action) => {
         state.isLoading = false;
-        // Capture error for payment
         state.error = action.payload || "Error capturing payment";
-      });
+      })
+      .addCase(getAllOrdersByUserId.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getAllOrdersByUserId.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderList = action.payload?.data || action.payload; 
+      })
+      .addCase(getAllOrdersByUserId.rejected, (state) => {
+        state.isLoading = false;
+        state.orderList = [] ;
+      })
+
+      .addCase(getOrderDetails.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(getOrderDetails.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.orderDetails = action.payload.data ;
+      })
+      .addCase(getOrderDetails.rejected, (state) => {
+        state.isLoading = false;
+        state.orderDetails = null ;
+      })
   },
 });
 
 export const { clearOrderState } = orderSlice.actions;
+export const { resetOrderDetails } = orderSlice.actions;
 export default orderSlice.reducer;

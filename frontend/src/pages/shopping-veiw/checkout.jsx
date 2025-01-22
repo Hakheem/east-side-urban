@@ -1,28 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Address from './address';
 import CartContents from '@/components/shopping-veiw/cartContents';
 import { Button } from '@/components/ui/button';
 import images from '@/assets/assets';
-import { createOrder, capturePayment } from '@/store/shop/shopOrdersSlice';
+import { createOrder } from '@/store/shop/shopOrdersSlice';
+import { toast } from 'react-toastify';
 
 const Checkout = () => {
   const { cartItems = { items: [] } } = useSelector((state) => state.shopCart);
   const { user } = useSelector((state) => state.auth);
 
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [paymentStarted, setpaymentStarted] = useState(false)
-  const {approvalUrl} = useSelector((state)=> state.shopOrder)
-  const dispatch = useDispatch()
+  const [paymentStarted, setpaymentStarted] = useState(false);
+  const { approvalUrl } = useSelector((state) => state.shopOrder);
+  const dispatch = useDispatch();
 
+  const total =
+    cartItems?.items?.reduce(
+      (acc, item) =>
+        acc + (item.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
+      0
+    ) || 0;
 
-  const total = cartItems?.items?.reduce(
-    (acc, item) =>
-      acc + (item.salePrice > 0 ? item.salePrice : item.price) * item.quantity,
-    0
-  ) || 0;
+  const initiatePaypalPayment = async () => {
+    if (selectedAddress === null) {
+      toast('Please select an address');
+      return;
+    }
 
-  const initiatePaypalPayment = () => {
+    if (cartItems.items.length === 0) {
+      toast('Your cart is empty');
+      return;
+    }
+
     const orderData = {
       userId: user?.id,
       cartId: cartItems?._id,
@@ -43,23 +54,21 @@ const Checkout = () => {
       payerId: '',
     };
 
-    dispatch(createOrder(orderData))
-    .unwrap()
-    .then((data) => {
-      console.log("Order created successfully:", data);
-      setpaymentStarted(true)
-    })
-    .catch((error) => {
-      console.error("Error creating order:", error);
-      setpaymentStarted(false)
-    });
-
+    try {
+      const data = await dispatch(createOrder(orderData)).unwrap();
+      console.log('Order created successfully:', data);
+      setpaymentStarted(true);
+    } catch (error) {
+      console.error('Error creating order:', error);
+      setpaymentStarted(false);
+    }
   };
 
-if (approvalUrl) {
-  window.location.href = approvalUrl;
-}
-
+  useEffect(() => {
+    if (approvalUrl) {
+      window.location.href = approvalUrl;
+    }
+  }, [approvalUrl]);
 
   return (
     <div className="flex flex-col">

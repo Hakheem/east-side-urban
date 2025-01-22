@@ -5,7 +5,7 @@ import { Dialog } from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
-  TableCell,
+  TableCell, 
   TableHead,
   TableHeader,
   TableRow,
@@ -35,7 +35,7 @@ Orders History
     <TableHead className="">
       <span className="sr-only ">Details</span>
     </TableHead>
-  </TableRow>
+  </TableRow> 
 </TableHeader>
 <TableBody>
   <TableRow>

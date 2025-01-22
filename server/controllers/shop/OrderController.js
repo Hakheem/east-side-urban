@@ -127,7 +127,6 @@ const capturePayment = async (req, res) => {
     // Clean the orderId (remove extra quotes)
     const cleanedOrderId = orderId.replace(/['"]+/g, '');
 
-    // Check if the cleaned orderId is a valid length (24 characters for ObjectId)
     if (cleanedOrderId.length !== 24) {
       return res.status(400).json({
         success: false,
@@ -135,7 +134,6 @@ const capturePayment = async (req, res) => {
       });
     }
 
-    // Find the order by its cleaned ID
     const order = await Orders.findById(cleanedOrderId);
     if (!order) {
       return res.status(404).json({
@@ -161,11 +159,9 @@ const capturePayment = async (req, res) => {
         order.paymentId = paymentId;
         order.payerId = payerId;
 
-        // Find and clear the user's cart
         const cart = await Cart.findOne({ userId: order.userId });
         if (cart) {
-          // Clear the cart items
-          cart.items = [];  // This empties the cart
+          cart.items = [];  
           await cart.save();
         }
 
@@ -193,6 +189,61 @@ const capturePayment = async (req, res) => {
   }
 };
 
+const getAllOrdersByUser = async(req, res) =>{
+  try {
+    const { userId } = req.params;
+    const orders = await Orders.find({userId})
+    if(!orders.length){
+      return res.status(404).json({
+        success: false,
+        message: 'No orders found for this user.',
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Orders fetched successfully.',
+      data: orders,
+    })
+
+  } catch (error) {
+    console.error('Create Order Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error while fetching orders.',
+      error: error.message,
+    });
+  }
+}
 
 
-module.exports = { createOrder, capturePayment };
+const getOrderDetails = async(req, res) =>{
+  try {
+    const {id} = req.params
+    const order = await Orders.findById(id);
+
+    if(!order){
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found.',
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: 'Order fetched successfully.',
+      data: order,
+    })
+
+
+  } catch (error) {
+    console.error('Create Order Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error while fetching orders.',
+      error: error.message,
+    });
+  }
+}
+
+
+
+module.exports = { createOrder, capturePayment, getAllOrdersByUser, getOrderDetails };
