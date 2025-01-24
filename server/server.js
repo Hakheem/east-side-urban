@@ -9,6 +9,7 @@ const shopProductsRouter = require('./routes/shop/shopProductRoutes');
 const CartRouter = require('./routes/shop/CartRoutes')
 const AddressRouter = require('./routes/shop/addressRoutes');
 const shopOrderRouter = require('./routes/shop/orderRoutes');
+const adminOrderRouter = require('./routes/admin/adminOrderRoutes');
 
 
 
@@ -46,6 +47,9 @@ app.use(express.json());
 
 app.use("/api/auth", authRouter);
 app.use('/api/admin/products', adminProductsRouter);
+app.use('/api/admin/orders', adminOrderRouter );
+
+
 app.use('/api/products', shopProductsRouter);
 app.use('/api/cart', CartRouter);
 app.use('/api/address', AddressRouter );

@@ -15,7 +15,7 @@ import {
   deleteProduct,
   editProduct,
   fetchProducts,
-} from "@/store/admin/productsSlice/ProductsSlice";
+} from "@/store/admin/ProductsSlice";
 import { toast } from "react-toastify";
 import AdminProductDisplay from "@/components/admin-veiw/productDisplay";
 
