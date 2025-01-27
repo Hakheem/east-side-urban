@@ -38,7 +38,7 @@ export const getOrderDetailsForAdmin = createAsyncThunk(
       });
     }
   }
-);
+); 
 
 // Update order status
 export const updateOrderStatusForAdmin = createAsyncThunk(

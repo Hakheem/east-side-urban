@@ -54,7 +54,7 @@ export const getAllOrdersByUserId = createAsyncThunk(
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status || 500,
-        message: error.response?.data?.message || 'Error capturing payment.',
+        message: error.response?.data?.message ,
       });
     }
   }
@@ -109,7 +109,6 @@ state.orderDetails = null;
         state.orderId = null;
         state.error = action.payload || "Error creating order";
       })
-      // Handle capturePayment
       .addCase(capturePayment.pending, (state) => {
         state.isLoading = true;
         state.error = null;

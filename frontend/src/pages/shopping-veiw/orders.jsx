@@ -25,12 +25,14 @@ const Orders = () => {
 
   useEffect(() => {
     if (user?.id) {
+      console.log("Fetching orders for user:", user.id);
       dispatch(getAllOrdersByUserId(user.id));
     }
   }, [dispatch, user?.id]);
 
   useEffect(() => {
     if (selectedOrderId) {
+      console.log(`Fetching details for Order ID: ${selectedOrderId}`);
       dispatch(getOrderDetails(selectedOrderId));
       setOpenDetailsDialog(true);
     }
@@ -40,8 +42,28 @@ const Orders = () => {
     setSelectedOrderId(orderId);
   };
 
-  // Sort orders from latest to oldest (non-mutating)
   const sortedOrders = orderList ? [...orderList].sort((a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)) : [];
+
+  // Debugging: Log fetched orders
+  useEffect(() => {
+    if (orderList?.length) {
+      console.log("Fetched Orders:", orderList);
+    } else {
+      console.warn("No orders found in Redux store.");
+    }
+  }, [orderList]);
+
+  // Debugging: Check each order status
+  sortedOrders.forEach((orderItem, index) => {
+    if (!orderItem?.orderStatus) {
+      console.warn(`Order Status Undefined for Order ${index + 1}:`, orderItem);
+    } else {
+      console.log(`Order ${index + 1} Status: ${orderItem.orderStatus}`);
+    }
+
+    // Log the entire order item to check its structure and the orderStatus field
+    console.log("Fetched Order Item:", orderItem);
+  });
 
   return (
     <Card>
@@ -63,36 +85,39 @@ const Orders = () => {
           </TableHeader>
           <TableBody>
             {sortedOrders?.length > 0 ? (
-              sortedOrders.map((orderItem) => (
-                <TableRow key={orderItem?._id}>
-                  <TableCell className="font-medium">{orderItem?._id}</TableCell>
-                  <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`py-1 px-3 ${orderItem?.orderStatus === "confirmed" ? "bg-green-500" : "bg-black"}`}
-                    >
-                      {orderItem?.orderStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>{orderItem?.totalAmount}</TableCell>
-                  <TableCell>
-                    <Dialog open={openDetailsDialog} onOpenChange={() => {
-                      setOpenDetailsDialog(false);
-                      dispatch(resetOrderDetails());
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button onClick={() => handleViewDetails(orderItem?._id)}>
-                          View Details
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        {/* Pass orderDetails to OrderDetails component */}
-                        <OrderDetails orderDetails={orderDetails} />
-                      </DialogContent>
-                    </Dialog>
-                  </TableCell>
-                </TableRow>
-              ))
+              sortedOrders.map((orderItem, index) => {
+                console.log("Fetched Order Item:", orderItem);
+
+                return (
+                  <TableRow key={orderItem?._id}>
+                    <TableCell className="font-medium">{orderItem?._id}</TableCell>
+                    <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`py-2 px-4 ${orderItem?.orderStatus === "confirmed" ? "bg-green-500" : "bg-black"}`}
+                      >
+                        {orderItem?.orderStatus || "Pending"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{orderItem?.totalAmount}</TableCell>
+                    <TableCell>
+                      <Dialog open={openDetailsDialog} onOpenChange={() => {
+                        setOpenDetailsDialog(false);
+                        dispatch(resetOrderDetails());
+                      }}>
+                        <DialogTrigger asChild>
+                          <Button onClick={() => handleViewDetails(orderItem?._id)}>
+                            View Details
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <OrderDetails orderDetails={orderDetails} />
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan="5" className="text-center">

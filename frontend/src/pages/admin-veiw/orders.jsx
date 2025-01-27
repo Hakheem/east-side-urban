@@ -43,13 +43,12 @@ const AdminOrders = () => {
 
   const sortedOrders = orderList ? [...orderList].sort((a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)) : [];
 
-  // Refetch orders if the orderDetails are updated (order status change)
   useEffect(() => {
     if (orderDetails?.orderStatus) {
       console.log("Order status updated, fetching all orders...");
       dispatch(getAllOrdersForAdmin());
     }
-  }, [orderDetails?.orderStatus, dispatch]);  // Trigger re-fetch when orderDetails change
+  }, [orderDetails?.orderStatus, dispatch]);  
 
   return (
     <Card>
@@ -84,7 +83,11 @@ const AdminOrders = () => {
                   <TableCell>
                     <Badge
                       className={`py-1 px-3 ${
-                        orderItem?.orderStatus === "confirmed" ? "bg-green-500" : "bg-black"
+                        orderItem?.orderStatus === "confirmed" ? "bg-green-500" :
+                        orderItem?.orderStatus === "shipped" ? "bg-blue-500" :
+                        orderItem?.orderStatus === "outForDelivery" ? "bg-yellow-500" :
+                        orderItem?.orderStatus === "delivered" ? "bg-purple-500" :
+                        orderItem?.orderStatus === "rejected" ? "bg-red-500" : "bg-black"
                       }`}
                     >
                       {orderItem?.orderStatus}

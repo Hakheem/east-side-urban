@@ -8,7 +8,7 @@ const createOrder = async (req, res) => {
     const {
       userId,
       cartItems,
-      orderStatus,
+      orderStatus, 
       addressInfo,
       paymentMethod,
       paymentStatus,
@@ -20,10 +20,11 @@ const createOrder = async (req, res) => {
       cartId,
     } = req.body;
 
-    // Validate required fields
     if (!userId || !cartItems || !totalAmount) {
       return res.status(400).json({ success: false, message: 'Invalid input data. Please ensure userId, cartItems, and totalAmount are provided.' });
     }
+
+    console.log('Order Status:', orderStatus); 
 
     // Set up PayPal payment JSON
     const payment_json = {
@@ -70,7 +71,7 @@ const createOrder = async (req, res) => {
       const newlyCreatedOrder = new Orders({
         userId,
         cartItems,
-        orderStatus,
+        orderStatus,  // This will be 'pending' if not provided
         addressInfo,
         paymentMethod,
         paymentStatus,
@@ -81,6 +82,9 @@ const createOrder = async (req, res) => {
         payerId,
         cartId,
       });
+
+      // Debugging: Log order before saving to check orderStatus
+      console.log('New Order Data:', newlyCreatedOrder);
 
       await newlyCreatedOrder.save();
 
@@ -112,6 +116,8 @@ const createOrder = async (req, res) => {
     });
   }
 };
+
+
 
 const capturePayment = async (req, res) => {
   try {

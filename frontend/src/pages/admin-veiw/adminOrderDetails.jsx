@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";  // Updated to use Shadcn Badge
+import { Badge } from "@/components/ui/badge";
 import Form from "@/components/common/Form";
-import { getAllOrdersForAdmin, getOrderDetailsForAdmin, updateOrderStatusForAdmin } from "@/store/admin/adminOrderSlice"; 
+import { getAllOrdersForAdmin, getOrderDetailsForAdmin, updateOrderStatusForAdmin } from "@/store/admin/adminOrderSlice";
 
 const AdminOrderDetails = ({ orderDetails }) => {
   const dispatch = useDispatch();
@@ -13,18 +13,16 @@ const AdminOrderDetails = ({ orderDetails }) => {
     orderStatus: orderDetails?.orderStatus || "confirmed",  
   });
 
-  // Only update formData when orderDetails changes (initial load)
+  // Use this effect to update the formData only when the orderDetails change
   useEffect(() => {
-    if (orderDetails && orderDetails?.orderStatus !== formData.orderStatus) {
-      setFormData({
-        orderStatus: orderDetails?.orderStatus || "confirmed",
-      });
+    if (orderDetails) {
+      setFormData({ orderStatus: orderDetails?.orderStatus || "confirmed" });
     }
   }, [orderDetails]);
 
   const handleUpdateStatus = (event) => {
     event.preventDefault();
-    const { orderStatus } = formData; 
+    const { orderStatus } = formData;
 
     console.log("Updating order status to:", orderStatus);
     
@@ -33,18 +31,21 @@ const AdminOrderDetails = ({ orderDetails }) => {
         if (data?.payload?.success) {
           console.log("Order status updated successfully:", data.payload);
 
-          // After status update, directly update formData with the new order status
-          setFormData({ orderStatus });  // Manually update formData
-          
-          // Dispatch getOrderDetailsForAdmin to fetch the updated order
-          dispatch(getOrderDetailsForAdmin(orderDetails?._id)).then((res) => {
-            // Ensure formData is updated with the new orderStatus after fetch
-            setFormData({
-              orderStatus: res?.payload?.data?.orderStatus || orderStatus,  // Update if needed
-            });
+          // Immediately update formData with the new status from the backend
+          setFormData({
+            orderStatus: orderStatus,  // Set formData with the updated order status
           });
-          
-          // Dispatch getAllOrdersForAdmin to update the orders list in AdminOrders
+
+          // Fetch the updated order details after status change
+          dispatch(getOrderDetailsForAdmin(orderDetails?._id)).then((res) => {
+            if (res?.payload?.data) {
+              setFormData({
+                orderStatus: res?.payload?.data?.orderStatus || orderStatus, // Use the updated status from the backend
+              });
+            }
+          });
+
+          // Optionally, refresh the list of orders after status change
           dispatch(getAllOrdersForAdmin());
         } else {
           console.error("Failed to update order status:", data);
@@ -73,14 +74,15 @@ const AdminOrderDetails = ({ orderDetails }) => {
           <div className="flex items-center justify-between mt-2">
             <p className="font-medium">Order Status</p>
             <Badge
-              className={`py-1 px-3 rounded text-white ${formData.orderStatus === "confirmed"
+              className={`py-1 px-3 rounded text-white ${
+                formData.orderStatus === "confirmed"
                   ? "bg-green-500"
                   : formData.orderStatus === "shipped"
                   ? "bg-blue-500"
                   : formData.orderStatus === "rejected"
                   ? "bg-red-500"
                   : formData.orderStatus === "outForDelivery"
-                  ? "bg-yellow-500"  // Added outForDelivery color
+                  ? "bg-yellow-500"
                   : "bg-black"
               }`}
             >
@@ -136,7 +138,7 @@ const AdminOrderDetails = ({ orderDetails }) => {
               { id: "shipped", label: "Shipped" },
               { id: "outForDelivery", label: "Out for Delivery" },
               { id: "delivered", label: "Delivered" },
-              { id: "rejected", label: "Rejected" },  // Added rejected status option
+              { id: "rejected", label: "Rejected" }, 
             ],
           }]}
 
