@@ -18,7 +18,7 @@ const OrderDetails = ({ orderDetails }) => {
     }
   }, [orderDetails]);
 
-  console.log(orderDetails?.orderStatus); // Or in the admin view
+  console.log(orderDetails?.orderStatus); 
 
 
   return (
