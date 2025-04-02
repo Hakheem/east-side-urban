@@ -104,7 +104,7 @@ state.orderDetails = null;
         sessionStorage.setItem('currentOrderId', JSON.stringify(action.payload.orderId ))
       })
       .addCase(createOrder.rejected, (state, action) => {
-        state.isLoading = false;
+        state.isLoading = false; 
         state.approvalUrl = null;
         state.orderId = null;
         state.error = action.payload || "Error creating order";

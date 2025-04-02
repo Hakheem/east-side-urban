@@ -38,7 +38,7 @@ export const getOrderDetailsForAdmin = createAsyncThunk(
       });
     }
   }
-); 
+);
 
 // Update order status
 export const updateOrderStatusForAdmin = createAsyncThunk(
@@ -48,8 +48,7 @@ export const updateOrderStatusForAdmin = createAsyncThunk(
       const response = await axios.put(`http://localhost:5000/api/admin/orders/update-order-status/${id}`, {
         orderStatus,
       });
-
-      return response.data
+      return response.data; // Returns the updated order
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status || 500,

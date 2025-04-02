@@ -2,64 +2,59 @@ import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import Form from "@/components/common/Form";
 import { getAllOrdersForAdmin, getOrderDetailsForAdmin, updateOrderStatusForAdmin } from "@/store/admin/adminOrderSlice";
+
+const initialFormData = {
+  orderStatus: ""
+};
 
 const AdminOrderDetails = ({ orderDetails }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
 
-  const [formData, setFormData] = useState({
-    orderStatus: orderDetails?.orderStatus || "confirmed",  
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
-  // Use this effect to update the formData only when the orderDetails change
+  // Ensure formData updates when orderDetails change
   useEffect(() => {
     if (orderDetails) {
-      setFormData({ orderStatus: orderDetails?.orderStatus || "confirmed" });
+      setFormData({ orderStatus: orderDetails.orderStatus || "" });
     }
   }, [orderDetails]);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
   const handleUpdateStatus = (event) => {
     event.preventDefault();
-    const { orderStatus } = formData;
 
-    console.log("Updating order status to:", orderStatus);
-    
-    dispatch(updateOrderStatusForAdmin({ id: orderDetails?._id, status: orderStatus }))
+    // Use formData.orderStatus instead of undefined orderStatus
+    dispatch(updateOrderStatusForAdmin({ id: orderDetails?._id, orderStatus: formData.orderStatus }))
       .then((data) => {
         if (data?.payload?.success) {
           console.log("Order status updated successfully:", data.payload);
 
           // Immediately update formData with the new status from the backend
-          setFormData({
-            orderStatus: orderStatus,  // Set formData with the updated order status
-          });
+          setFormData({ orderStatus: data.payload.orderStatus });
 
-          // Fetch the updated order details after status change
-          dispatch(getOrderDetailsForAdmin(orderDetails?._id)).then((res) => {
-            if (res?.payload?.data) {
-              setFormData({
-                orderStatus: res?.payload?.data?.orderStatus || orderStatus, // Use the updated status from the backend
-              });
-            }
-          });
-
-          // Optionally, refresh the list of orders after status change
-          dispatch(getAllOrdersForAdmin());
+          // Fetch updated order details
+          dispatch(getOrderDetailsForAdmin(orderDetails?._id));
+          dispatch(getAllOrdersForAdmin()); // Refresh orders list
         } else {
           console.error("Failed to update order status:", data);
         }
       })
       .catch((error) => {
-        console.error('Error during status update:', error);
+        console.error("Error during status update:", error);
       });
   };
 
-  console.log("Current formData:", formData);
-
   return (
-    <div className="sm:max-w-[700px] h-[90vh] overflow-y-scroll flex flex-col">
+    <div className="sm:max-w-[1000px] w-full h-full flex flex-col">
       <div className="grid gap-6 flex-1">
         {/* Order Info */}
         <div className="grid gap-2">
@@ -74,17 +69,7 @@ const AdminOrderDetails = ({ orderDetails }) => {
           <div className="flex items-center justify-between mt-2">
             <p className="font-medium">Order Status</p>
             <Badge
-              className={`py-1 px-3 rounded text-white ${
-                formData.orderStatus === "confirmed"
-                  ? "bg-green-500"
-                  : formData.orderStatus === "shipped"
-                  ? "bg-blue-500"
-                  : formData.orderStatus === "rejected"
-                  ? "bg-red-500"
-                  : formData.orderStatus === "outForDelivery"
-                  ? "bg-yellow-500"
-                  : "bg-black"
-              }`}
+              className={`py-1 px-3 rounded text-white ${formData.orderStatus === "confirmed" ? "bg-green-500" : formData.orderStatus === "shipped" ? "bg-blue-500" : formData.orderStatus === "processing" ? "bg-gray-500" : formData.orderStatus === "rejected" ? "bg-red-500" : formData.orderStatus === "rejected" ? "bg-red-500" : formData.orderStatus === "outForDelivery" ? "bg-orange-500" : "bg-black"}`}
             >
               {formData.orderStatus}
             </Badge>
@@ -101,15 +86,14 @@ const AdminOrderDetails = ({ orderDetails }) => {
         <div className="grid gap-4">
           <h2 className="font-semibold">Order Details</h2>
           <ul className="grid gap-3">
-            {orderDetails?.cartItems && orderDetails?.cartItems.length > 0 ? (
-              orderDetails?.cartItems?.map((item, index) => (
+            {orderDetails?.cartItems?.length > 0 &&
+              orderDetails.cartItems.map((item, index) => (
                 <li key={index} className="flex items-center justify-between">
                   <span>{item?.title}</span>
                   <span>Quantity: {item?.quantity}</span>
                   <span>${item?.price}</span>
                 </li>
-              ))
-            ) : null}
+              ))}
           </ul>
         </div>
 
@@ -127,26 +111,28 @@ const AdminOrderDetails = ({ orderDetails }) => {
         </div>
 
         {/* Form to update Order Status */}
-        <Form
-          formControls={[{
-            label: "Order status",
-            name: "orderStatus",
-            componentType: "select",
-            options: [
-              { id: "pending", label: "Pending" },
-              { id: "processing", label: "Processing" },
-              { id: "shipped", label: "Shipped" },
-              { id: "outForDelivery", label: "Out for Delivery" },
-              { id: "delivered", label: "Delivered" },
-              { id: "rejected", label: "Rejected" }, 
-            ],
-          }]}
-
-          formData={formData}
-          setFormData={setFormData}
-          buttonText="Update Order Status"
-          onSubmit={handleUpdateStatus}
-        />
+        <form onSubmit={handleUpdateStatus} className="grid gap-4">
+          <div className="flex items-center justify-between mt-2">
+            <p className="font-medium">Order Status</p>
+            <select
+              name="orderStatus"
+              value={formData.orderStatus}
+              onChange={handleChange}
+              className="py-2 px-4 border-2 border-gray-300 rounded-md"
+            >
+              <option value="pending">Pending</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="outForDelivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          
+          <button type="submit" className="w-full py-2 px-4 bg-blue-500 text-white rounded">
+            Update Status
+          </button>
+        </form>
       </div>
     </div>
   );

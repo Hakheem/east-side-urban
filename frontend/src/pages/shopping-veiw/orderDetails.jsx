@@ -36,19 +36,13 @@ const OrderDetails = ({ orderDetails }) => {
         </div>
         <div className="flex items-center justify-between mt-2">
           <p className="font-medium">Order Status</p>
-          <div
-            className={`py-1 px-3 rounded text-white ${
-              orderDetails?.orderStatus === "confirmed"
-                ? "bg-green-500"
-                : orderDetails?.orderStatus === "shipped"
-                ? "bg-blue-500"
-                : orderDetails?.orderStatus === "rejected"
-                ? "bg-red-500"
-                : "bg-black"
-            }`}
-          >
-            {orderDetails?.orderStatus}
-          </div>
+ <Badge
+              className={`py-1 px-3 rounded text-white ${formData.orderStatus === "confirmed" ? "bg-green-500" : formData.orderStatus === "shipped" ? "bg-blue-500" : formData.orderStatus === "processing" ? "bg-gray-500" : formData.orderStatus === "rejected" ? "bg-red-500" : formData.orderStatus === "rejected" ? "bg-red-500" : formData.orderStatus === "outForDelivery" ? "bg-orange-500" : "bg-cyan-500"}`}
+            >
+              {orderDetails?.orderStatus}
+            </Badge>
+
+
         </div>
         <div className="flex items-center justify-between mt-2">
           <p className="font-medium">Amount</p>
