@@ -41,6 +41,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       quantity,
+      totalStock,
     } = req.body;
 
     const newlyAddedProduct = new Product({
@@ -52,6 +53,7 @@ const addProduct = async (req, res) => {
       price,
       salePrice,
       quantity,
+      totalStock,
     });
 
     await newlyAddedProduct.save();
@@ -100,6 +102,7 @@ const editProduct = async (req, res) => {
       price,
       salePrice,
       quantity,
+      totalStock,
     } = req.body;
 
     const updatedProduct = await Product.findById(id);
@@ -119,6 +122,7 @@ const editProduct = async (req, res) => {
     updatedProduct.price = price || updatedProduct.price;
     updatedProduct.salePrice = salePrice || updatedProduct.salePrice;
     updatedProduct.quantity = quantity || updatedProduct.quantity;
+    updatedProduct.totalStock = totalStock || updatedProduct.totalStock;
 
     await updatedProduct.save();
 
