@@ -24,6 +24,7 @@ import PaypalReturn from "./pages/shopping-veiw/Paypal/PaypalReturn";
 import PaypalCancel from "./pages/shopping-veiw/Paypal/PaypalCancel";
 import PaymentSuccess from "./pages/shopping-veiw/Paypal/payment-success";
 import PaymentFailure from "./pages/shopping-veiw/Paypal/payment-failure";
+import SearchPage from "./pages/shopping-veiw/searchPage";
 
 function App() {
   const { user, isAuthenticated, isLoading } = useSelector(
@@ -90,6 +91,7 @@ function App() {
           <Route path="paypal-return" element={<PaypalReturn />} />
           <Route path="payment-success" element={<PaymentSuccess />} />
           <Route path="payment-failure" element={<PaymentFailure />} />
+          <Route path="search" element={<SearchPage />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

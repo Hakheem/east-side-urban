@@ -55,7 +55,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails, handleAddToCart })
   {
     product?.totalStock === 0 
       ? <Button disabled className="w-full">Out of stock</Button> 
-      : <Button onClick={() => handleAddToCart(product?._id)} className="w-full">Add to Cart</Button>
+      : <Button onClick={() => handleAddToCart(product?._id, product?.totalStock)} className="w-full">Add to Cart</Button>
   }
 </CardFooter>
 

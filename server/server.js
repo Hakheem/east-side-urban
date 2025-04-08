@@ -10,6 +10,7 @@ const CartRouter = require('./routes/shop/CartRoutes')
 const AddressRouter = require('./routes/shop/addressRoutes');
 const shopOrderRouter = require('./routes/shop/orderRoutes');
 const adminOrderRouter = require('./routes/admin/adminOrderRoutes');
+const shopSearchRouter = require('./routes/shop/searchRoutes');
 
 
 
@@ -54,5 +55,6 @@ app.use('/api/products', shopProductsRouter);
 app.use('/api/cart', CartRouter);
 app.use('/api/address', AddressRouter );
 app.use('/api/orders', shopOrderRouter );
+app.use('/api/search', shopSearchRouter );
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -1,9 +1,6 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
 import { setProductDetails } from "@/store/shop/shopProductsSlice";
@@ -11,15 +8,32 @@ import { IoMdStar, IoMdStarHalf } from "react-icons/io";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 
-
 const ProductDetails = ({ open, setOpen, productDetails }) => {
   if (!productDetails) return null;
 
   const dispatch = useDispatch();
-  const { user } = useSelector(state=>state.auth)
+  const { user } = useSelector((state) => state.auth);
+  const { cartItems } = useSelector((state) => state.shopCart);
 
-   // Handle add to cart functionality
-   const handleAddToCart = (currentId) => {
+  // Handle add to cart functionality
+  const handleAddToCart = (currentId, getTotalStock) => {
+    let getCartItems = cartItems.items || [];
+
+    if (getCartItems.length) {
+      const indexOfCurrentItem = getCartItems.findIndex(
+        (item) => item.productId === currentId
+      );
+      if (indexOfCurrentItem > -1) {
+        const getQuantity = getCartItems[indexOfCurrentItem].quantity;
+        if (getQuantity >= getTotalStock) {
+          toast.info("Product quantity in cart exceeds available stock", {
+            position: "top-center",
+          });
+          return;
+        }
+      }
+    }
+
     if (!user?.id) return;
 
     dispatch(
@@ -32,7 +46,9 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
       .then((data) => {
         if (data?.payload.success) {
           dispatch(fetchCartItems(user.id));
-          toast.success("Product added to cart");
+          toast.success("Product added to cart", {
+            position: "top-center",
+          });
         }
       })
       .catch((error) => {
@@ -40,9 +56,9 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
       });
   };
 
-  function handleDialogClose(){
+  function handleDialogClose() {
     setOpen(false);
-    dispatch(setProductDetails())
+    dispatch(setProductDetails());
   }
 
   return (
@@ -95,7 +111,23 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
           </div>
 
           <div className="mt-4">
-            <Button className="w-full" onClick={()=> handleAddToCart(productDetails?._id)} >Add to Cart</Button>
+            {productDetails?.totalStock === 0 ? (
+              <Button disabled className="w-full">
+                Out of stock
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                onClick={() =>
+                  handleAddToCart(
+                    productDetails?._id,
+                    productDetails?.totalStock
+                  )
+                }
+              >
+                Add to Cart
+              </Button>
+            )}
           </div>
 
           <hr className="mt-6 h-[2px]" />

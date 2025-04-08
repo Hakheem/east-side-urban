@@ -138,6 +138,7 @@ export const shopHeaderMenuItems = [
     label: "Footwear",
     path: "/listing",
   },
+ 
 ];
 
 export const filterOptions = {

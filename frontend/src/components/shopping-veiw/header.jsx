@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoMdMenu } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
+import { CiSearch } from "react-icons/ci";
 import { MdLogout } from "react-icons/md";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
@@ -22,10 +23,14 @@ import CartWrapper from "./cartWrapper";
 import { Label } from "../ui/label";
 import images from "@/assets/assets";
 
+// Handle Navigation
 function handleNavigation(menuItem, navigate) {
-  const currentFilter = (menuItem.id !== "home" && menuItem.id !== "products")
-    ? { category: [menuItem.id] }
-    : null;
+  const currentFilter =
+    menuItem.id !== "home" &&
+    menuItem.id !== "products" &&
+    menuItem.id !== "search"
+      ? { category: [menuItem.id] }
+      : null;
 
   if (currentFilter) {
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
@@ -38,6 +43,7 @@ function handleNavigation(menuItem, navigate) {
   }
 }
 
+// MenuItems component
 function MenuItems({ closeSheet, navigate }) {
   return (
     <nav className="flex flex-col mb-3 lg:mb-0 lg:items-center lg:flex-row gap-6">
@@ -50,13 +56,19 @@ function MenuItems({ closeSheet, navigate }) {
             closeSheet && closeSheet();
           }}
         >
-          {menuItem.label}
+          {menuItem.id === "search" ? (
+            // Search logic stays here as you requested
+            <CiSearch className="h-3 w-3" />
+          ) : (
+            menuItem.label
+          )}
         </Label>
       ))}
     </nav>
   );
 }
 
+// RightContent component
 function RightContent() {
   const { user } = useSelector((state) => state.auth);
   const { cartItems } = useSelector((state) => state.shopCart);
@@ -70,11 +82,26 @@ function RightContent() {
     }
   }, [dispatch, user?.id]);
 
-  const totalItems = cartItems?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
+  const totalItems =
+    cartItems?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
 
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
-      <Sheet open={openCartSheet} onOpenChange={(state) => setOpenCartSheet(state)}>
+      <Button
+        onClick={() => navigate("/search")}
+        variant="outline"
+        size="icon"
+        aria-label="Search"
+        className="relative"
+      >
+        <CiSearch className="h-6 w-6" />
+      </Button>
+
+      {/* Cart Button */}
+      <Sheet
+        open={openCartSheet}
+        onOpenChange={(state) => setOpenCartSheet(state)}
+      >
         <Button
           onClick={() => setOpenCartSheet(true)}
           variant="outline"
@@ -96,6 +123,8 @@ function RightContent() {
           />
         </SheetContent>
       </Sheet>
+
+      {/* User Avatar and Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Avatar className="bg-black cursor-pointer">
@@ -105,7 +134,9 @@ function RightContent() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" className="w-56">
-          <DropdownMenuLabel>Logged in as {user?.userName || "Guest"}</DropdownMenuLabel>
+          <DropdownMenuLabel>
+            Logged in as {user?.userName || "Guest"}
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => navigate("/account")}>
             <FaUser className="mr-2 h-4 w-4" /> Account
@@ -120,6 +151,7 @@ function RightContent() {
   );
 }
 
+// ShopHeader component
 const ShopHeader = () => {
   const navigate = useNavigate();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -137,7 +169,10 @@ const ShopHeader = () => {
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full max-w-xs" side="left">
-            <MenuItems closeSheet={() => setIsSheetOpen(false)} navigate={navigate} />
+            <MenuItems
+              closeSheet={() => setIsSheetOpen(false)}
+              navigate={navigate}
+            />
             <RightContent />
           </SheetContent>
         </Sheet>

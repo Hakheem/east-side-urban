@@ -9,25 +9,64 @@ import { deleteCartItem, updateCartItemsQty } from "@/store/shop/cartSlice";
 const CartContents = ({ cartItem }) => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const { cartItems } = useSelector((state) => state.shopCart);
+  const { productList } = useSelector((state) => state.shopProducts);
 
   // Handle Delete Cart Item
   function handleDeleteCartItem(getCartItem) {
-    dispatch(deleteCartItem({ userId: user?.id, productId: getCartItem?.productId }));
+    dispatch(
+      deleteCartItem({ userId: user?.id, productId: getCartItem?.productId })
+    );
     toast.info(`${getCartItem?.title} removed from cart`, {
-      position: "bottom-center", 
-      autoClose: 2000, 
-      closeOnClick: true,
-      pauseOnHover: true,
+      position: "bottom-center",
+      autoClose: 2000,
     });
   }
 
   // Handle Update Quantity
   function handleUpdateQuantity(getCartItem, typeOfAction) {
+    if (!getCartItem || !getCartItem.productId || !user?.id) return;
+
+    let getCartItems = cartItems.items || [];
+
+    if (getCartItems.length) {
+      const indexOfCurrentCartItem = getCartItems.findIndex(
+        (item) => item.productId === getCartItem?.productId
+      );
+
+      const getCurrentProductIndex = productList.findIndex(
+        (product) => product._id === getCartItem?.productId
+      );
+      const getTotalStock = productList[getCurrentProductIndex]?.totalStock;
+
+      if (indexOfCurrentCartItem > -1) {
+        const getQuantity = getCartItems[indexOfCurrentCartItem].quantity;
+
+        if (typeOfAction === "plus" && getQuantity >= getTotalStock) {
+          toast.info("Product quantity in cart exceeds available stock", {
+            position: "top-center",
+          });
+          return;
+        }
+
+        if (typeOfAction === "minus" && getQuantity <= 1) {
+          toast.info("Product quantity can't be less than 1", {
+            position: "top-center",
+          });
+          return;
+        }
+      }
+    }
+
+    // Dispatch action to update the cart quantity
     dispatch(
       updateCartItemsQty({
         userId: user?.id,
         productId: getCartItem?.productId,
-        quantity: typeOfAction === "plus" ? getCartItem?.quantity + 1 : getCartItem?.quantity - 1,
+        quantity:
+          typeOfAction === "plus"
+            ? getCartItem?.quantity + 1
+            : getCartItem?.quantity - 1,
       })
     );
   }
@@ -74,8 +113,9 @@ const CartContents = ({ cartItem }) => {
           <p className="font-semibold">
             $
             {(
-              (cartItem?.salePrice > 0 ? cartItem?.salePrice : cartItem?.price) *
-              cartItem?.quantity
+              (cartItem?.salePrice > 0
+                ? cartItem?.salePrice
+                : cartItem?.price) * cartItem?.quantity
             ).toFixed(2)}
           </p>
           <Trash

@@ -75,7 +75,24 @@ const Listing = () => {
   };
 
   // Handle add to cart functionality
-  const handleAddToCart = (currentId) => {
+  const handleAddToCart = (currentId, getTotalStock) => {
+    let getCartItems = cartItems.items || [];
+
+    if (getCartItems.length) {
+      const indexOfCurrentItem = getCartItems.findIndex(
+        (item) => item.productId === currentId
+      );
+      if (indexOfCurrentItem > -1) {
+        const getQuantity = getCartItems[indexOfCurrentItem].quantity;
+        if (getQuantity >= getTotalStock) {
+          toast.info("Product quantity in cart exceeds available stock", {
+            position: "top-center",
+          });
+          return;
+        }
+      }
+    }
+
     if (!user?.id) return;
 
     const product = productList.find((p) => p.id === currentId);
@@ -115,7 +132,7 @@ const Listing = () => {
         query.append(key, value.join(","));
       }
     }
- 
+
     setSearchParams(query);
   }, [filters, setSearchParams]);
 
@@ -130,9 +147,6 @@ const Listing = () => {
   useEffect(() => {
     if (productDetails !== null) setShowProductDetails(true);
   }, [productDetails]);
-
-
-  console.log("Product List:", productList);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-6 md:p-6">
