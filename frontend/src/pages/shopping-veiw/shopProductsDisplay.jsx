@@ -50,7 +50,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails, handleAddToCart })
           )}
         </div>
       </CardContent>
-
+ 
       <CardFooter>
   {
     product?.totalStock === 0 
