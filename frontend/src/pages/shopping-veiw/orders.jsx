@@ -11,7 +11,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllOrdersByUserId, getOrderDetails, resetOrderDetails } from "@/store/shop/shopOrdersSlice";
+import {
+  getAllOrdersByUserId,
+  getOrderDetails,
+  resetOrderDetails,
+} from "@/store/shop/shopOrdersSlice";
 import { Badge } from "@/components/ui/badge";
 import OrderDetails from "./orderDetails";
 
@@ -42,27 +46,18 @@ const Orders = () => {
     setSelectedOrderId(orderId);
   };
 
-  const sortedOrders = orderList ? [...orderList].sort((a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)) : [];
+  const sortedOrders = orderList
+    ? [...orderList].sort(
+        (a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)
+      )
+    : [];
 
-  // Debugging: Log fetched orders
-  useEffect(() => {
-    if (orderList?.length) {
-      console.log("Fetched Orders:", orderList);
-    } else {
-      console.warn("No orders found in Redux store.");
-    }
-  }, [orderList]);
-
-  // Debugging: Check each order status
   sortedOrders.forEach((orderItem, index) => {
     if (!orderItem?.orderStatus) {
       console.warn(`Order Status Undefined for Order ${index + 1}:`, orderItem);
     } else {
       console.log(`Order ${index + 1} Status: ${orderItem.orderStatus}`);
     }
-
-    // Log the entire order item to check its structure and the orderStatus field
-    console.log("Fetched Order Item:", orderItem);
   });
 
   return (
@@ -90,23 +85,42 @@ const Orders = () => {
 
                 return (
                   <TableRow key={orderItem?._id}>
-                    <TableCell className="font-medium">{orderItem?._id}</TableCell>
+                    <TableCell className="font-medium">
+                      {orderItem?._id}
+                    </TableCell>
                     <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
                     <TableCell>
                       <Badge
-                        className={`py-2 px-4 ${orderItem?.orderStatus === "confirmed" ? "bg-green-500" : "bg-black"}`}
+                        className={`py-2 px-4 rounded-full text-white ${
+                          orderItem?.orderStatus === "confirmed"
+                            ? "bg-green-500"
+                            : orderItem?.orderStatus === "shipped"
+                            ? "bg-blue-500"
+                            : orderItem?.orderStatus === "processing"
+                            ? "bg-gray-500"
+                            : orderItem?.orderStatus === "rejected"
+                            ? "bg-red-500"
+                            : orderItem?.orderStatus === "outForDelivery"
+                            ? "bg-orange-500"
+                            : "bg-black"
+                        }`}
                       >
                         {orderItem?.orderStatus || "Pending"}
                       </Badge>
                     </TableCell>
                     <TableCell>{orderItem?.totalAmount}</TableCell>
                     <TableCell>
-                      <Dialog open={openDetailsDialog} onOpenChange={() => {
-                        setOpenDetailsDialog(false);
-                        dispatch(resetOrderDetails());
-                      }}>
+                      <Dialog
+                        open={openDetailsDialog}
+                        onOpenChange={() => {
+                          setOpenDetailsDialog(false);
+                          dispatch(resetOrderDetails());
+                        }}
+                      >
                         <DialogTrigger asChild>
-                          <Button onClick={() => handleViewDetails(orderItem?._id)}>
+                          <Button
+                            onClick={() => handleViewDetails(orderItem?._id)}
+                          >
                             View Details
                           </Button>
                         </DialogTrigger>

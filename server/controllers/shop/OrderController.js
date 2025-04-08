@@ -1,6 +1,7 @@
 const paypal = require('../../helpers/paypal');
 const Orders = require('../../models/Orders');
 const Cart = require('../../models/Cart');
+const Product = require('../../models/Products');
 const { Types } = require('mongoose');
 
 const createOrder = async (req, res) => {
@@ -164,6 +165,19 @@ const capturePayment = async (req, res) => {
         order.orderStatus = 'confirmed';
         order.paymentId = paymentId;
         order.payerId = payerId;
+
+        for (let item of order.cartItems){
+          let product = await Product.findById(item.productId);
+
+          if(!product){
+            return res.status(404).json({
+              success : false,
+              message : `Not enough stock for this product ${product.title}`
+            })
+          }
+          product.totalStock -= item.quantity;
+          await product.save();
+        }
 
         const cart = await Cart.findOne({ userId: order.userId });
         if (cart) {

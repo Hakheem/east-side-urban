@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import Filter from "./Filter";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { LuArrowUpDown } from "react-icons/lu";
@@ -16,10 +21,9 @@ import ProductDetails from "./productDetails";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
 import { toast } from "react-toastify";
 
- 
 const Listing = () => {
   const dispatch = useDispatch();
-  const { productList, productDetails, error} = useSelector(
+  const { productList, productDetails, error } = useSelector(
     (state) => state.shopProducts
   );
   const { user } = useSelector((state) => state.auth);
@@ -29,9 +33,7 @@ const Listing = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProductDetails, setShowProductDetails] = useState(false);
 
-console.log(cartItems);
-
-
+  const categorySearchParam = searchParams.get("category");
   // Handle sorting changes
   const handleSort = (value) => {
     setSort(value);
@@ -76,6 +78,8 @@ console.log(cartItems);
   const handleAddToCart = (currentId) => {
     if (!user?.id) return;
 
+    const product = productList.find((p) => p.id === currentId);
+
     dispatch(
       addToCart({
         userId: user.id,
@@ -86,7 +90,9 @@ console.log(cartItems);
       .then((data) => {
         if (data?.payload.success) {
           dispatch(fetchCartItems(user.id));
-          toast.success("Product added to cart");
+          toast.success(`${product?.title || "Product"} added to cart`, {
+            position: "top-center",
+          });
         }
       })
       .catch((error) => {
@@ -98,7 +104,7 @@ console.log(cartItems);
   useEffect(() => {
     setSort("price-lowtohigh");
     setFilters(JSON.parse(sessionStorage.getItem("filters")) || {});
-  }, []);
+  }, [categorySearchParam]);
 
   // Update searchParams when filters change
   useEffect(() => {
@@ -109,7 +115,7 @@ console.log(cartItems);
         query.append(key, value.join(","));
       }
     }
-
+ 
     setSearchParams(query);
   }, [filters, setSearchParams]);
 
@@ -119,11 +125,14 @@ console.log(cartItems);
       fetchFilteredProducts({ filterParams: filters, sortParams: sort })
     );
   }, [dispatch, filters, sort]);
- 
-  // Show product details modal 
+
+  // Show product details modal
   useEffect(() => {
     if (productDetails !== null) setShowProductDetails(true);
   }, [productDetails]);
+
+
+  console.log("Product List:", productList);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-6 md:p-6">
@@ -146,7 +155,7 @@ console.log(cartItems);
                   <span>Sort by</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[200px] mt-1">
+              <DropdownMenuContent align="end" className="w-[20px] mt-1">
                 <DropdownMenuRadioGroup value={sort} onValueChange={handleSort}>
                   {sortOptions.map((sortItem) => (
                     <DropdownMenuRadioItem
@@ -176,7 +185,7 @@ console.log(cartItems);
               />
             ))
           ) : (
-            <p>No products available</p>
+            <p>Nothing's available for now.</p>
           )}
         </div>
       </div>

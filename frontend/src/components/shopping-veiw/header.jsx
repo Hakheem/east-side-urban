@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { IoMdMenu } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { MdLogout } from "react-icons/md";
@@ -23,10 +23,19 @@ import { Label } from "../ui/label";
 import images from "@/assets/assets";
 
 function handleNavigation(menuItem, navigate) {
-  const currentFilter =
-    menuItem.id !== "home" ? { category: [menuItem.id] } : null;
-  sessionStorage.setItem("filters", JSON.stringify(currentFilter));
-  navigate(menuItem.path);
+  const currentFilter = (menuItem.id !== "home" && menuItem.id !== "products")
+    ? { category: [menuItem.id] }
+    : null;
+
+  if (currentFilter) {
+    sessionStorage.setItem("filters", JSON.stringify(currentFilter));
+    const query = new URLSearchParams();
+    query.set("category", menuItem.id);
+    navigate(`/listing?${query.toString()}`);
+  } else {
+    sessionStorage.removeItem("filters");
+    navigate(menuItem.path);
+  }
 }
 
 function MenuItems({ closeSheet, navigate }) {
@@ -55,21 +64,17 @@ function RightContent() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (user?.id) {
       dispatch(fetchCartItems(user?.id));
     }
   }, [dispatch, user?.id]);
 
-  const totalItems =
-    cartItems?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
+  const totalItems = cartItems?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
 
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
-      <Sheet
-        open={openCartSheet}
-        onOpenChange={(state) => setOpenCartSheet(state)}
-      >
+      <Sheet open={openCartSheet} onOpenChange={(state) => setOpenCartSheet(state)}>
         <Button
           onClick={() => setOpenCartSheet(true)}
           variant="outline"
@@ -83,11 +88,10 @@ function RightContent() {
               {totalItems}
             </span>
           )}
-          <span className="sr-only">Cart</span>
         </Button>
         <SheetContent className="w-full max-w-sm">
           <CartWrapper
-          setOpenCartSheet={setOpenCartSheet}
+            setOpenCartSheet={setOpenCartSheet}
             cartItems={cartItems?.items?.length > 0 ? cartItems.items : []}
           />
         </SheetContent>
@@ -101,21 +105,13 @@ function RightContent() {
           </Avatar>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" className="w-56">
-          <DropdownMenuLabel>
-            Logged in as {user?.userName || "Guest"}
-          </DropdownMenuLabel>
+          <DropdownMenuLabel>Logged in as {user?.userName || "Guest"}</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => navigate("/account")}
-            className="cursor-pointer"
-          >
+          <DropdownMenuItem onClick={() => navigate("/account")}>
             <FaUser className="mr-2 h-4 w-4" /> Account
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => dispatch(logoutUser())}
-            className="cursor-pointer"
-          >
+          <DropdownMenuItem onClick={() => dispatch(logoutUser())}>
             <MdLogout className="mr-2 h-4 w-4" /> Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -132,24 +128,16 @@ const ShopHeader = () => {
     <header className="sticky top-0 z-50 w-full bg-background border-b">
       <div className="flex h-16 items-center justify-between px-4 md:px-6">
         <Link to="/home" className="flex items-center gap-2">
-          <img src={images.logo} className=" max-h-[4rem] " />
+          <img src={images.logo} className="max-h-[4rem]" />
         </Link>
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setIsSheetOpen(true)}
-            >
+            <Button variant="outline" size="icon" className="lg:hidden">
               <IoMdMenu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
           <SheetContent className="w-full max-w-xs" side="left">
-            <MenuItems
-              closeSheet={() => setIsSheetOpen(false)}
-              navigate={navigate}
-            />
+            <MenuItems closeSheet={() => setIsSheetOpen(false)} navigate={navigate} />
             <RightContent />
           </SheetContent>
         </Sheet>

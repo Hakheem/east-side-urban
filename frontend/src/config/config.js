@@ -109,6 +109,11 @@ export const shopHeaderMenuItems = [
     path: "/home",
   },
   {
+    id: "products",
+    label: "Products",
+    path: "/listing",
+  },
+  {
     id: "men",
     label: "Men",
     path: "/listing",
