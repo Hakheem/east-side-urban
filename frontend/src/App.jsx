@@ -45,8 +45,16 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col bg-white">
+    <div className="flex flex-col">
       <Routes>
+        <Route 
+        path="/" 
+        element={
+          <CheckAuth isAuthenticated={isAuthenticated} user={user}>
+          </CheckAuth>
+        }
+        
+        />
         {/* auth routes */}
         <Route
           path="/auth"
@@ -77,7 +85,7 @@ function App() {
 
         {/* shop routes */}
         <Route
-          path="/"
+          path="/" 
           element={
             <CheckAuth isAuthenticated={isAuthenticated} user={user}>
               <ShopLayout />

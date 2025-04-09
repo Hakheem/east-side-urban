@@ -1,18 +1,27 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { toast } from "react-toastify";
 
 const AddressCard = ({
   addressInfo,
   handleDeleteAddress,
   handleEditAddress,
   setSelectedAddress,
+  selectedAddress,
 }) => {
+  const [isSelected, setIsSelected] = useState(false);
+
+  const handleSelectAddress = (address) => {
+    setSelectedAddress(address); 
+    toast.success("Address selected successfully!");
+    setIsSelected(true); 
+  };
+
   return (
     <Card
-      onClick={setSelectedAddress ? () => setSelectedAddress(addressInfo) : null}
-      className="shadow-lg border border-gray-300 rounded-lg bg-white relative"
+      className={`shadow-lg border border-gray-300 rounded-lg bg-white relative ${isSelected ? 'bg-blue-100' : ''}`}
     >
       {/* Absolute Select Button */}
       {setSelectedAddress && (
@@ -21,14 +30,14 @@ const AddressCard = ({
           variant="outline"
           size="sm"
           onClick={(e) => {
-            e.stopPropagation(); 
-            setSelectedAddress(addressInfo);
+            e.stopPropagation();
+            handleSelectAddress(addressInfo); 
           }}
         >
           Select
         </Button>
       )}
-      
+
       <CardContent className="grid p-6 gap-4">
         <div className="space-y-2">
           <Label className="block font-bold text-md text-gray-700">
@@ -63,8 +72,12 @@ const AddressCard = ({
           </Label>
         </div>
       </CardContent>
+
       <CardFooter className="flex justify-between p-3">
+        {/* Edit Button */}
         <Button onClick={() => handleEditAddress(addressInfo)}>Edit</Button>
+
+        {/* Delete Button */}
         <Button
           variant="destructive"
           onClick={() => handleDeleteAddress(addressInfo)}
