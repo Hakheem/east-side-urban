@@ -81,11 +81,14 @@ const Home = () => {
       })
     )
       .then((data) => {
-        if (data?.payload.success) {
+        if (data?.payload?.success) {
           dispatch(fetchCartItems(user.id));
-          toast.success("Product added to cart");
+          toast.success(`${product?.title || "Product"} added to cart`, {
+            position: "top-center",
+          });
         }
       })
+
       .catch((error) => {
         console.error("Error adding to cart:", error);
       });
@@ -133,16 +136,21 @@ const Home = () => {
 
             {/* Text container */}
             <div
-              className={` heroTxt absolute top-[calc(50%-3rem)] right-[calc(8px+4%)] transform -translate-y-1/2 text-white text-[2.3rem] font-bold p-2 leading-snug`}
-              style={{ width: "45%" }}
+              className={`
+          heroTxt absolute top-[calc(50%-3rem)] right-[calc(8px+4%)] transform -translate-y-1/2 
+          text-white font-bold p-2 leading-snug
+          text-[1.6rem] sm:text-[1.8rem] md:text-[2rem] lg:text-[2.3rem]
+          w-[90%] sm:w-[80%] md:w-[70%] lg:w-[45%]
+          text-center lg:text-left px-4 sm:px-6 md:px-8
+        `}
             >
               {slide.text}
             </div>
 
             {/* Button container */}
-            <div className="absolute bottom-[11rem] right-[24rem]  w-[20%] ">
+            <div className="absolute top-2/3 lg:bottom-[10rem] lg:left-[68%] md:left-[60%] left-1/2 transform -translate-x-1/2 w-[60%] md:w-[30%]">
               <Button
-                className="w-full font-semibold h-12 "
+                className="w-full font-semibold h-12"
                 onClick={handleNavigationToListingPage}
               >
                 Shop Now
@@ -195,7 +203,7 @@ const Home = () => {
               </div>
             ))}
           </div>
-        </div> 
+        </div>
       </section>
 
       {/* Brands Section */}

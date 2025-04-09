@@ -34,7 +34,6 @@ const Listing = () => {
   const [showProductDetails, setShowProductDetails] = useState(false);
 
   const categorySearchParam = searchParams.get("category");
-  // Handle sorting changes
   const handleSort = (value) => {
     setSort(value);
   };
@@ -59,7 +58,7 @@ const Listing = () => {
 
     setFilters(filtersCopy);
     sessionStorage.setItem("filters", JSON.stringify(filtersCopy));
-  };
+  }; 
 
   // handleProductDetails function
   const handleProductDetails = (currentId) => {
@@ -187,7 +186,7 @@ const Listing = () => {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 p-4 lg:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 p-4 lg:grid-cols-4">
           {error && <p className="text-red-500">Error: {error}</p>}
           {productList.length > 0 ? (
             productList.map((productItem, index) => (

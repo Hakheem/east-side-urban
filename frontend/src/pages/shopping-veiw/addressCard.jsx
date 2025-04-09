@@ -21,7 +21,7 @@ const AddressCard = ({
 
   return (
     <Card
-      className={`shadow-lg border border-gray-300 rounded-lg bg-white relative ${isSelected ? 'bg-blue-100' : ''}`}
+      className={`shadow-lg  rounded-lg bg-white relative ${isSelected ? 'bg-blue-100' : ''}`}
     >
       {/* Absolute Select Button */}
       {setSelectedAddress && (
