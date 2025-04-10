@@ -51,7 +51,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails, handleAddToCart })
         </div>
       </CardContent>
  
-      <CardFooter>
+      <CardFooter> 
   {
     product?.totalStock === 0 
       ? <Button disabled className="w-full">Out of stock</Button> 

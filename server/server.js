@@ -13,6 +13,7 @@ const adminOrderRouter = require('./routes/admin/adminOrderRoutes');
 const shopSearchRouter = require('./routes/shop/searchRoutes');
 const reviewRouter = require('./routes/shop/reviewRoutes');
 
+const commonFeatureRouter = require('./routes/common/featureRoutes');
 
 
 const app = express();
@@ -23,7 +24,7 @@ const PORT = process.env.PORT || 5000;
 mongoose
   .connect(
     "mongodb+srv://hakheem67:Hakheem%40Hector@east-side.vxhfe.mongodb.net/east-side"
-  )
+  ) 
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
@@ -58,5 +59,7 @@ app.use('/api/address', AddressRouter );
 app.use('/api/orders', shopOrderRouter );
 app.use('/api/search', shopSearchRouter );
 app.use('/api/reviews', reviewRouter );
+
+  app.use('/api/common/features', commonFeatureRouter);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

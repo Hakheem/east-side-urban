@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
 import { toast } from "react-toastify";
 import ProductDetails from "./productDetails";
+import { fetchFeatureImages } from "@/store/common/featureSlice";
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -24,21 +25,7 @@ const Home = () => {
   );
   const { user } = useSelector((state) => state.auth);
   const [showProductDetails, setShowProductDetails] = useState(false);
-
-  const slides = [
-    {
-      image: images.hero12,
-      text: "Empower your look with our stylish women's collection. Fashion-forward designs for every occasion.",
-    },
-    {
-      image: images.men1,
-      text: "Elevate your style with our men's collection. Bold designs, quality fabrics, and the perfect fit.",
-    },
-    {
-      image: images.hero2,
-      text: "Unleash your style with our chic women’s collection. Effortless elegance, everyday comfort.",
-    },
-  ];
+  const { featureImageList } = useSelector((state) => state.commonFeatures);
 
   const categories = [
     { id: "men", label: "Men", icon: PiTShirtLight },
@@ -59,12 +46,12 @@ const Home = () => {
     { id: "formal", label: "Formal", logo: images.clarksLogo },
   ];
 
-  function handleNavigationToListingPage(getCurrentItem, section) {
+  const handleNavigationToListingPage = (item, section) => {
     sessionStorage.removeItem("filters");
-    const currentFilter = { [section]: [getCurrentItem.id] };
+    const currentFilter = { [section]: [item.id] };
     sessionStorage.setItem("filters", JSON.stringify(currentFilter));
     navigate(`/listing`);
-  }
+  };
 
   const handleProductDetails = (currentId) => {
     dispatch(fetchProductDetails(currentId));
@@ -73,53 +60,39 @@ const Home = () => {
   const handleAddToCart = (currentId) => {
     if (!user?.id) return;
 
-    dispatch(
-      addToCart({
-        userId: user.id,
-        productId: currentId,
-        quantity: 1,
-      })
-    )
+    dispatch(addToCart({ userId: user.id, productId: currentId, quantity: 1 }))
       .then((data) => {
         if (data?.payload?.success) {
           dispatch(fetchCartItems(user.id));
-          toast.success(`${product?.title || "Product"} added to cart`, {
-            position: "top-center",
-          });
+          toast.success("Product added to cart", { position: "top-center" });
         }
       })
-
-      .catch((error) => {
-        console.error("Error adding to cart:", error);
-      });
+      .catch((error) => console.error("Error adding to cart:", error));
   };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prevSlide) => (prevSlide + 1) % slides.length);
-    }, 7000);
+      setCurrentSlide((prev) => (prev + 1) % featureImageList.length);
+    }, 3500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [featureImageList.length]);
 
   useEffect(() => {
     dispatch(
-      fetchFilteredProducts({
-        filterParams: {},
-        sortParams: "price-lowtohigh",
-      })
+      fetchFilteredProducts({ filterParams: {}, sortParams: "price-lowtohigh" })
     );
+    dispatch(fetchFeatureImages());
   }, [dispatch]);
 
   useEffect(() => {
-    if (productDetails !== null) setShowProductDetails(true);
+    if (productDetails) setShowProductDetails(true);
   }, [productDetails]);
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <div className="relative w-full h-[600px] fadeIn overflow-hidden">
-        {slides.map((slide, index) => (
+      <div className="relative w-full h-[600px] items-center fadeIn overflow-hidden">
+        {featureImageList?.map((slide, index) => (
           <div
             key={index}
             className={`absolute inset-0 transition-opacity ease-in duration-2000 ${
@@ -131,24 +104,11 @@ const Home = () => {
               alt={`Slide ${index + 1}`}
               className="w-full h-full object-cover object-center"
             />
-            {/* Overlay */}
             <div className="absolute inset-0 bg-black bg-opacity-15"></div>
-
-            {/* Text container */}
-            <div
-              className={`
-          heroTxt absolute top-[calc(50%-3rem)] right-[calc(8px+4%)] transform -translate-y-1/2 
-          text-white font-bold p-2 leading-snug
-          text-[1.6rem] sm:text-[1.8rem] md:text-[2rem] lg:text-[2.3rem]
-          w-[90%] sm:w-[80%] md:w-[70%] lg:w-[45%]
-          text-center lg:text-left px-4 sm:px-6 md:px-8
-        `}
-            >
+            <div className="absolute top-[calc(50%-3rem)] right-[calc(8px+4%)] transform -translate-y-1/2 text-white font-bold p-2 leading-snug text-[1.6rem] sm:text-[1.8rem] md:text-[2rem] lg:text-[2.3rem] w-[90%] sm:w-[80%] md:w-[70%] lg:w-[45%] text-center lg:text-left px-4 sm:px-6 md:px-8">
               {slide.text}
             </div>
-
-            {/* Button container */}
-            <div className="absolute top-2/3 lg:bottom-[10rem] lg:left-[68%] md:left-[60%] left-1/2 transform -translate-x-1/2 w-[60%] md:w-[30%]">
+            <div className="absolute top-[83%] left-1/2 transform -translate-x-1/2 w-1/2 md:w-[50%]">
               <Button
                 className="w-full font-semibold h-12"
                 onClick={handleNavigationToListingPage}
@@ -158,11 +118,11 @@ const Home = () => {
             </div>
           </div>
         ))}
-
         <Button
           onClick={() =>
             setCurrentSlide(
-              (prevSlide) => (prevSlide - 1 + slides.length) % slides.length
+              (prev) =>
+                (prev - 1 + featureImageList.length) % featureImageList.length
             )
           }
           variant="outline"
@@ -173,7 +133,7 @@ const Home = () => {
         </Button>
         <Button
           onClick={() =>
-            setCurrentSlide((prevSlide) => (prevSlide + 1) % slides.length)
+            setCurrentSlide((prev) => (prev + 1) % featureImageList.length)
           }
           variant="outline"
           size="icon"
@@ -183,7 +143,6 @@ const Home = () => {
         </Button>
       </div>
 
-      {/* Categories Section */}
       <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
           <h2 className="font-bold text-2xl text-center mb-8">
@@ -206,7 +165,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Brands Section */}
       <section className="py-12">
         <div className="container mx-auto">
           <h2 className="font-bold text-2xl text-center mb-8">Shop by Brand</h2>
@@ -229,27 +187,24 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Products Display Section */}
       <section className="py-12">
         <div className="container mx-auto">
           <h2 className="font-bold text-2xl text-center mb-8">
             Featured Products
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 sm:grid-cols-8 gap-6">
-            {productList && productList.length > 0
-              ? productList.map((productItem) => (
-                  <ShopProductsDisplay
-                    handleProductDetails={handleProductDetails}
-                    handleAddToCart={handleAddToCart}
-                    product={productItem}
-                  />
-                ))
-              : null}
+            {productList?.map((product) => (
+              <ShopProductsDisplay
+                key={product.id}
+                handleProductDetails={handleProductDetails}
+                handleAddToCart={handleAddToCart}
+                product={product}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Product Details Modal */}
       <ProductDetails
         open={showProductDetails}
         setOpen={setShowProductDetails}

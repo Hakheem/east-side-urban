@@ -8,6 +8,7 @@ import shopOrdersSlice from './shop/shopOrdersSlice';
 import adminOrderSlice from "./admin/adminOrderSlice";
 import shopSearchSlice from "./shop/searchSlice";
 import reviewSlice from "./shop/reviewSlice";
+import featuresSlice from "./common/featureSlice";
 
 
 const store = configureStore({ 
@@ -17,10 +18,11 @@ const store = configureStore({
     shopProducts: shopProductsSlice,
     shopCart : cartSlice,
     addresses: addressSlice,
-    shopOrder : shopOrdersSlice,
+    shopOrder : shopOrdersSlice, 
     adminOrder : adminOrderSlice, 
     shopSearch : shopSearchSlice, 
     shopReviews : reviewSlice, 
+    commonFeatures : featuresSlice, 
   },
 });
 
