@@ -69,7 +69,7 @@ const ProductImageUpload = ({
       data.append("image", imageFile);
 
       const response = await axios.post(
-        "http://localhost:5000/api/admin/products/upload-image",
+        `${import.meta.env.VITE_URL_API}/api/admin/products/upload-image`,
         data
       );
 

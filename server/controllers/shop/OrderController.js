@@ -1,15 +1,21 @@
-const paypal = require('../../helpers/paypal');
-const Orders = require('../../models/Orders');
-const Cart = require('../../models/Cart');
-const Product = require('../../models/Products');
-const { Types } = require('mongoose');
+const paypal = require("../../helpers/paypal");
+const Orders = require("../../models/Orders");
+const Cart = require("../../models/Cart");
+const Product = require("../../models/Products");
+const { Types } = require("mongoose");
+require("dotenv").config();
+
+const isProd = process.env.ENV_MODE === "prod";
+const clientBaseUrl = isProd
+  ? process.env.CLIENT_URL_PROD
+  : process.env.CLIENT_URL_DEV;
 
 const createOrder = async (req, res) => {
   try {
     const {
       userId,
       cartItems,
-      orderStatus, 
+      orderStatus,
       addressInfo,
       paymentMethod,
       paymentStatus,
@@ -22,20 +28,26 @@ const createOrder = async (req, res) => {
     } = req.body;
 
     if (!userId || !cartItems || !totalAmount) {
-      return res.status(400).json({ success: false, message: 'Invalid input data. Please ensure userId, cartItems, and totalAmount are provided.' });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message:
+            "Invalid input data. Please ensure userId, cartItems, and totalAmount are provided.",
+        });
     }
 
-    console.log('Order Status:', orderStatus); 
+    console.log("Order Status:", orderStatus);
 
     // Set up PayPal payment JSON
     const payment_json = {
-      intent: 'sale',
+      intent: "sale",
       payer: {
         payment_method: "paypal",
       },
       redirect_urls: {
-        return_url: 'http://localhost:5173/paypal-return',
-        cancel_url: 'http://localhost:5173/paypal-cancel',
+        return_url: `${clientBaseUrl}/paypal-return`,
+        cancel_url: `${clientBaseUrl}/paypal-cancel`,
       },
       transactions: [
         {
@@ -44,15 +56,15 @@ const createOrder = async (req, res) => {
               name: item.title,
               sku: item.productId,
               price: item.price.toFixed(2),
-              currency: 'USD',
+              currency: "USD",
               quantity: item.quantity,
             })),
           },
           amount: {
-            currency: 'USD',
+            currency: "USD",
             total: totalAmount.toFixed(2),
           },
-          description: 'Order payment',
+          description: "Order payment",
         },
       ],
     };
@@ -60,10 +72,10 @@ const createOrder = async (req, res) => {
     // Create PayPal payment
     paypal.payment.create(payment_json, async (error, paymentCheck) => {
       if (error) {
-        console.error('PayPal Error:', error);
+        console.error("PayPal Error:", error);
         return res.status(500).json({
           success: false,
-          message: 'Error while creating PayPal payment.',
+          message: "Error while creating PayPal payment.",
           error: error.response || error,
         });
       }
@@ -72,7 +84,7 @@ const createOrder = async (req, res) => {
       const newlyCreatedOrder = new Orders({
         userId,
         cartItems,
-        orderStatus,  // This will be 'pending' if not provided
+        orderStatus, // This will be 'pending' if not provided
         addressInfo,
         paymentMethod,
         paymentStatus,
@@ -85,40 +97,38 @@ const createOrder = async (req, res) => {
       });
 
       // Debugging: Log order before saving to check orderStatus
-      console.log('New Order Data:', newlyCreatedOrder);
+      console.log("New Order Data:", newlyCreatedOrder);
 
       await newlyCreatedOrder.save();
 
       // Find approval URL
       const approvalUrl = paymentCheck.links?.find(
-        (link) => link.rel === 'approval_url'
+        (link) => link.rel === "approval_url"
       )?.href;
 
       if (approvalUrl) {
         return res.status(201).json({
           success: true,
-          message: 'Payment created successfully.',
+          message: "Payment created successfully.",
           approvalUrl,
           orderId: newlyCreatedOrder._id,
         });
       } else {
         return res.status(500).json({
           success: false,
-          message: 'Approval URL not found in payment response.',
+          message: "Approval URL not found in payment response.",
         });
       }
     });
   } catch (error) {
-    console.error('Create Order Error:', error);
+    console.error("Create Order Error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error while creating order.',
+      message: "Error while creating order.",
       error: error.message,
     });
   }
 };
-
-
 
 const capturePayment = async (req, res) => {
   try {
@@ -127,17 +137,17 @@ const capturePayment = async (req, res) => {
     if (!paymentId || !payerId || !orderId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing required parameters: paymentId, payerId, or orderId.',
+        message: "Missing required parameters: paymentId, payerId, or orderId.",
       });
     }
 
     // Clean the orderId (remove extra quotes)
-    const cleanedOrderId = orderId.replace(/['"]+/g, '');
+    const cleanedOrderId = orderId.replace(/['"]+/g, "");
 
     if (cleanedOrderId.length !== 24) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid orderId format.',
+        message: "Invalid orderId format.",
       });
     }
 
@@ -145,125 +155,128 @@ const capturePayment = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found.',
+        message: "Order not found.",
       });
     }
 
     // Execute the PayPal payment capture
-    paypal.payment.execute(paymentId, { payer_id: payerId }, async (error, payment) => {
-      if (error) {
-        console.error('PayPal Error:', error.response || error);
-        return res.status(500).json({
-          success: false,
-          message: 'Error capturing PayPal payment.',
-          error: error.response || error,
-        });
-      }
+    paypal.payment.execute(
+      paymentId,
+      { payer_id: payerId },
+      async (error, payment) => {
+        if (error) {
+          console.error("PayPal Error:", error.response || error);
+          return res.status(500).json({
+            success: false,
+            message: "Error capturing PayPal payment.",
+            error: error.response || error,
+          });
+        }
 
-      if (payment.state === 'approved') {
-        order.paymentStatus = 'paid';
-        order.orderStatus = 'confirmed';
-        order.paymentId = paymentId;
-        order.payerId = payerId;
+        if (payment.state === "approved") {
+          order.paymentStatus = "paid";
+          order.orderStatus = "confirmed";
+          order.paymentId = paymentId;
+          order.payerId = payerId;
 
-        for (let item of order.cartItems){
-          let product = await Product.findById(item.productId);
+          for (let item of order.cartItems) {
+            let product = await Product.findById(item.productId);
 
-          if(!product){
-            return res.status(404).json({
-              success : false,
-              message : `Not enough stock for this product ${product.title}`
-            })
+            if (!product) {
+              return res.status(404).json({
+                success: false,
+                message: `Not enough stock for this product ${product.title}`,
+              });
+            }
+            product.totalStock -= item.quantity;
+            await product.save();
           }
-          product.totalStock -= item.quantity;
-          await product.save();
+
+          const cart = await Cart.findOne({ userId: order.userId });
+          if (cart) {
+            cart.items = [];
+            await cart.save();
+          }
+
+          await order.save();
+
+          return res.status(200).json({
+            success: true,
+            message: "Payment captured successfully and cart reset.",
+            order,
+          });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: "Payment not approved.",
+          });
         }
-
-        const cart = await Cart.findOne({ userId: order.userId });
-        if (cart) {
-          cart.items = [];  
-          await cart.save();
-        }
-
-        await order.save();
-
-        return res.status(200).json({
-          success: true,
-          message: 'Payment captured successfully and cart reset.',
-          order,
-        });
-      } else {
-        return res.status(400).json({
-          success: false,
-          message: 'Payment not approved.',
-        });
       }
-    });
+    );
   } catch (error) {
-    console.error('Capture Payment Error:', error);
+    console.error("Capture Payment Error:", error);
     return res.status(500).json({
       success: false,
-      message: 'Internal server error while capturing payment.',
+      message: "Internal server error while capturing payment.",
       error: error.message,
     });
   }
 };
 
-const getAllOrdersByUser = async(req, res) =>{
+const getAllOrdersByUser = async (req, res) => {
   try {
     const { userId } = req.params;
-    const orders = await Orders.find({userId})
-    if(!orders.length){
+    const orders = await Orders.find({ userId });
+    if (!orders.length) {
       return res.status(404).json({
         success: false,
-        message: 'No orders found for this user.',
+        message: "No orders found for this user.",
       });
     }
     res.status(200).json({
       success: true,
-      message: 'Orders fetched successfully.',
+      message: "Orders fetched successfully.",
       data: orders,
-    })
-
+    });
   } catch (error) {
-    console.error('Create Order Error:', error);
+    console.error("Create Order Error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error while fetching orders.',
+      message: "Error while fetching orders.",
       error: error.message,
     });
   }
-}
+};
 
-
-const getOrderDetails = async(req, res) =>{
+const getOrderDetails = async (req, res) => {
   try {
-    const {id} = req.params
+    const { id } = req.params;
     const order = await Orders.findById(id);
 
-    if(!order){
+    if (!order) {
       return res.status(404).json({
         success: false,
-        message: 'Order not found.',
+        message: "Order not found.",
       });
     }
     res.status(200).json({
       success: true,
-      message: 'Order fetched successfully.',
+      message: "Order fetched successfully.",
       data: order,
-    })
-
-
+    });
   } catch (error) {
-    console.error('Create Order Error:', error);
+    console.error("Create Order Error:", error);
     res.status(500).json({
       success: false,
-      message: 'Error while fetching orders.',
+      message: "Error while fetching orders.",
       error: error.message,
     });
   }
-}
+};
 
-
-
-module.exports = { createOrder, capturePayment, getAllOrdersByUser, getOrderDetails };
+module.exports = {
+  createOrder,
+  capturePayment,
+  getAllOrdersByUser,
+  getOrderDetails,
+};

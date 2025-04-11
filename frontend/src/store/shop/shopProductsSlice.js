@@ -29,11 +29,14 @@ export const fetchFilteredProducts = createAsyncThunk(
       }
 
       const response = await axios.get(
-        `http://localhost:5000/api/products/fetch?${query}`
+        `${import.meta.env.VITE_URL_API}/api/products/fetch?${query}` 
       );
       return response.data;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue({
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || error.message,
+      });
     }
   }
 );
@@ -44,14 +47,18 @@ export const fetchProductDetails = createAsyncThunk(
   async (id, thunkAPI) => {
     try {
       const response = await axios.get(
-        `http://localhost:5000/api/products/get/${id}`
+        `${import.meta.env.VITE_URL_API}/api/products/get/${id}`  
       );
       return response.data;
     } catch (error) {
-      return thunkAPI.rejectWithValue(error.response?.data || error.message);
+      return thunkAPI.rejectWithValue({
+        status: error.response?.status || 500,
+        message: error.response?.data?.message || error.message,
+      });
     }
   }
 );
+
 
 // Slice
 const shopProductsSlice = createSlice({
@@ -64,7 +71,6 @@ const shopProductsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Cases for fetching filtered products
       .addCase(fetchFilteredProducts.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -79,7 +85,6 @@ const shopProductsSlice = createSlice({
         state.error = action.payload || "Failed to fetch products.";
       })
 
-      // Cases for fetching product details
       .addCase(fetchProductDetails.pending, (state) => {
         state.isLoading = true; 
         state.error = null;

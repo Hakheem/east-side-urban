@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken'); // For generating JWT tokens
 const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
 const GITHUB_CLIENT_ID = 'YOUR_GITHUB_CLIENT_ID';
 const APPLE_CLIENT_ID = 'YOUR_APPLE_CLIENT_ID';
-
+ 
 // Google OAuth2 Client
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 

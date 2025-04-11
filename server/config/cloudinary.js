@@ -3,11 +3,11 @@ const multer = require("multer");
 const streamifier = require("streamifier");
 
 cloudinary.config({
-  cloud_name: "dfmvz8if7",
-  api_key: "721268477474472",
-  api_secret: "rmr0_oY0yoYijPyyw3e2IAVj9rE",
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-
+ 
 const storage = multer.memoryStorage();
 
 function uploadToCloudinary(fileBuffer) {

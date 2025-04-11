@@ -13,7 +13,7 @@ export const getAllOrdersForAdmin = createAsyncThunk(
   "/order/get-orders-admin",
   async (_, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get("http://localhost:5000/api/admin/orders/admin-orders/");
+      const { data } = await axios.get(`${import.meta.env.VITE_URL_API}/api/admin/orders/admin-orders/`);
       return data;
     } catch (error) {
       return rejectWithValue({
@@ -29,7 +29,7 @@ export const getOrderDetailsForAdmin = createAsyncThunk(
   "/order/get-order-details-admin",
   async (id, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/admin/orders/admin-order-details/${id}`);
+      const { data } = await axios.get(`${import.meta.env.VITE_URL_API}/api/admin/orders/admin-order-details/${id}`);
       return data;
     } catch (error) {
       return rejectWithValue({
@@ -45,9 +45,9 @@ export const updateOrderStatusForAdmin = createAsyncThunk(
   "/order/update-order-status-admin",
   async ({ id, orderStatus }, { rejectWithValue }) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/admin/orders/update-order-status/${id}`, {
+      const response = await axios.put(`${import.meta.env.VITE_URL_API}/api/admin/orders/update-order-status/${id}`, {
         orderStatus,
-      });
+      }); 
       return response.data; // Returns the updated order
     } catch (error) {
       return rejectWithValue({

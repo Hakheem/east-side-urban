@@ -4,14 +4,18 @@ import axios from "axios";
 const initialState = {
   cartItems: [],
   isLoading: false,
+  error: null,
 };
 
 // Add to Cart
 export const addToCart = createAsyncThunk(
   'cart/addToCart',
   async ({ userId, productId, quantity }) => {
-    const response = await axios.post('http://localhost:5000/api/cart/add', { userId, productId, quantity });
-    return response.data;
+    const response = await axios.post(
+      `${import.meta.env.VITE_URL_API}/api/cart/add`, 
+      { userId, productId, quantity }
+    );
+    return response.data; 
   }
 );
 
@@ -19,7 +23,7 @@ export const addToCart = createAsyncThunk(
 export const fetchCartItems = createAsyncThunk(
   'cart/fetchCartItems',
   async (userId) => {
-    const response = await axios.get(`http://localhost:5000/api/cart/get/${userId}`);
+    const response = await axios.get(`${import.meta.env.VITE_URL_API}/api/cart/get/${userId}`);
     return response.data;
   }
 );
@@ -28,7 +32,10 @@ export const fetchCartItems = createAsyncThunk(
 export const updateCartItemsQty = createAsyncThunk(
   'cart/updateCartItemsQty',
   async ({ userId, productId, quantity }) => {
-    const response = await axios.put('http://localhost:5000/api/cart/update-cart', { userId, productId, quantity });
+    const response = await axios.put(
+      `${import.meta.env.VITE_URL_API}/api/cart/update-cart`, 
+      { userId, productId, quantity }
+    );
     return response.data;
   }
 );
@@ -37,7 +44,7 @@ export const updateCartItemsQty = createAsyncThunk(
 export const deleteCartItem = createAsyncThunk(
   'cart/deleteCartItem',
   async ({ userId, productId }) => {
-    const response = await axios.delete(`http://localhost:5000/api/cart/delete/${userId}/${productId}`);
+    const response = await axios.delete(`${import.meta.env.VITE_URL_API}/api/cart/delete/${userId}/${productId}`);
     return response.data;
   }
 );
@@ -55,12 +62,11 @@ const cartSlice = createSlice({
       })
       .addCase(addToCart.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cartItems = action.payload.data;
+        state.cartItems = action.payload.data || []; 
       })
       .addCase(addToCart.rejected, (state, action) => {
         state.isLoading = false;
-        state.cartItems = [];
-        state.error = action.payload;
+        state.error = action.payload || 'Error adding to cart';
       })
 
       // Fetch Cart Items
@@ -69,11 +75,11 @@ const cartSlice = createSlice({
       })
       .addCase(fetchCartItems.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cartItems = action.payload.data;
+        state.cartItems = action.payload.data || [];
       })
       .addCase(fetchCartItems.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Error fetching cart items';
       })
 
       // Update Cart Items Quantity
@@ -82,11 +88,11 @@ const cartSlice = createSlice({
       })
       .addCase(updateCartItemsQty.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cartItems = action.payload.data;
+        state.cartItems = action.payload.data || [];
       })
       .addCase(updateCartItemsQty.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Error updating cart item quantity';
       })
 
       // Delete Cart Item
@@ -96,11 +102,11 @@ const cartSlice = createSlice({
       })
       .addCase(deleteCartItem.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.cartItems = action.payload.data;
+        state.cartItems = action.payload.data || []; 
       })
       .addCase(deleteCartItem.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload || 'Error deleting cart item';
       });
   },
 });

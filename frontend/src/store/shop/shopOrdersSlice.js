@@ -14,7 +14,7 @@ export const createOrder = createAsyncThunk(
   '/order/createOrder',
   async (orderData, { rejectWithValue }) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/orders/create', orderData);
+      const response = await axios.post(`${import.meta.env.VITE_URL_API}/api/orders/create`, orderData);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response ? error.response.data : error.message);
@@ -22,17 +22,15 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-
 export const capturePayment = createAsyncThunk(
   '/order/capturePayment',
   async ({ paymentId, payerId, orderId }, { rejectWithValue }) => {
     try {
-      const { data } = await axios.post(`http://localhost:5000/api/orders/capture`, {
+      const { data } = await axios.post(`${import.meta.env.VITE_URL_API}/api/orders/capture`, {
         paymentId,
         payerId,
         orderId,
       });
-
       return data;
     } catch (error) {
       return rejectWithValue({
@@ -43,18 +41,16 @@ export const capturePayment = createAsyncThunk(
   }
 );
 
-
 export const getAllOrdersByUserId = createAsyncThunk(
   '/order/get-orders',
   async (userId, { rejectWithValue }) => {
     try {
-      const { data } = await axios.get(`http://localhost:5000/api/orders/list/${userId}`
-      );
+      const { data } = await axios.get(`${import.meta.env.VITE_URL_API}/api/orders/list/${userId}`);
       return data;
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status || 500,
-        message: error.response?.data?.message ,
+        message: error.response?.data?.message || 'Error fetching orders.',
       });
     }
   }
@@ -64,18 +60,17 @@ export const getOrderDetails = createAsyncThunk(
   '/order/get-order-details',
   async (id, { rejectWithValue }) => {
     try {
-
-      const { data } = await axios.get(`http://localhost:5000/api/orders/details/${id}`
-      );
+      const { data } = await axios.get(`${import.meta.env.VITE_URL_API}/api/orders/details/${id}`);
       return data;
     } catch (error) {
       return rejectWithValue({
         status: error.response?.status || 500,
-        message: error.response?.data?.message || 'Error capturing payment.',
+        message: error.response?.data?.message || 'Error fetching order details.',
       });
     }
   }
 );
+
 
 const orderSlice = createSlice({
   name: 'orderSlice',
