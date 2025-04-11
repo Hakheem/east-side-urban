@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
-import ProductImageUpload from "./productImageUpload";
+import ProductImageUpload from "./ProductImageUpload";
 import { useDispatch, useSelector } from "react-redux";
 import { addFeatureImages, fetchFeatureImages } from "@/store/common/featureSlice";
 

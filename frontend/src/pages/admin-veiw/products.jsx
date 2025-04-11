@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/sheet";
 import Form from "@/components/common/Form";
 import { addProductsFormElements } from "@/config/config";
-import ProductImageUpload from "./ProductImageUpload";
+import ProductImageUpload from "./productImageUpload";
 import { useDispatch, useSelector } from "react-redux";
 import {
   addNewProduct,
