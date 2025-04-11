@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
-import ProductImageUpload from "./ProductImageUpload";
+import ProductImageUpload from "./productImageUpload";
 import { useDispatch, useSelector } from "react-redux";
 import { addFeatureImages, fetchFeatureImages } from "@/store/common/featureSlice";
 
@@ -15,7 +15,7 @@ const AdminDashboard = () => {
   // Handle image upload
   const handleUploadFeatureImage = () => {
     console.log("Handle Upload Clicked");
-    console.log("Uploaded Image URL:", uploadedImageUrl); // Log the uploaded image URL
+    console.log("Uploaded Image URL:", uploadedImageUrl); 
 
     if (uploadedImageUrl) {
       console.log("Dispatching addFeatureImages with image:", uploadedImageUrl);
