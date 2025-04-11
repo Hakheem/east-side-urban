@@ -17,7 +17,7 @@ import {
   resetAdminOrderDetails,
 } from "@/store/admin/adminOrderSlice";
 import { Badge } from "@/components/ui/badge";
-import AdminOrderDetails from "./AdminOrderDetails";
+import AdminOrderDetails from "./adminOrderDetails";
 
 const AdminOrders = () => {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
