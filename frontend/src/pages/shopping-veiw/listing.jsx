@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import Filter from "./Filter";
+import Filter from "./filter";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
+  DropdownMenuRadioGroup, 
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
