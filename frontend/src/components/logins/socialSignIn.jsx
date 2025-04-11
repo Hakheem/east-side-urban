@@ -9,8 +9,6 @@ const socialSignIn = () => {
     <div>
     <h2>Sign in with:</h2>
     <GoogleSignIn />
-    <AppleSignIn />
-    <GitHubSignIn />
     </div>
   )
 }
