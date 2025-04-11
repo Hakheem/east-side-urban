@@ -13,12 +13,12 @@ import header_img from "./header_img.jpg";
 import heroBg from "./heroBg.png";
 import logo from "./logo.png";
 import accesoriesHeader from "./accesoriesHeader.webp";
-import earing from "./earing.webP";
+import earing from "./earing.webp";
 import accesories from "./accesories.webp";
-import hero1 from "./hero1.webP";
-import hero2 from "./hero2.webP";
+import hero1 from "./hero1.webp";
+import hero2 from "./hero2.webp";
 import hero12 from "./hero12.png";
-import men1 from "./men1.webP";
+import men1 from "./men1.webp";
 import profile_icon from './profile_icon.png'
 import cover_photo from './cover_photo.png'
 import account from './account.webp'
