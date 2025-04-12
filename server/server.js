@@ -25,21 +25,21 @@ mongoose
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
-app.use(
-  cors({
-    origin: CLIENT_URL, 
-    methods: ["GET", "POST", "DELETE", "PUT"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Expires",
-      "Pragma",
-    ],
-    credentials: true,
-  })
-);
 
+  app.use(cors({
+    origin: CLIENT_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }));
+  
+  // Preflight fix
+  app.options('*', cors({
+    origin: CLIENT_URL,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  }));
+  
 app.options("*", cors());
 
 app.use(cookieParser());
