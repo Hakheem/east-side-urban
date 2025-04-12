@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
-import CartContents from "./CartContents";
+import CartContents from "./cartContents";
 import { SheetHeader, SheetTitle, SheetDescription } from "../ui/sheet";
 import { useNavigate } from "react-router-dom";
 
