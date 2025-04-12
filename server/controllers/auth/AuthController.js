@@ -69,14 +69,15 @@ const loginUser = async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,
-    });
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: true, // Set to false when on localhost and vice versa
+    // });
 
     res.status(200).json({
       success: true,
       message: "Login successful",
+      token,
       user: {
         email: checkUser.email,
         role: checkUser.role,
@@ -84,6 +85,7 @@ const loginUser = async (req, res) => {
         userName: checkUser.userName,
       },
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -99,8 +101,38 @@ const logoutUser = (req, res) => {
 };
 
 // Auth Middleware
+// const authMiddleware = async (req, res, next) => {
+//   const token = req.cookies.token;
+//   if (!token) {
+//     return res.status(401).json({
+//       success: false,
+//       message: "Please login to access.",
+//     });
+//   }
+
+//   try {
+//     const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
+
+//     req.user = decoded;
+//     next();
+//   } catch (error) {
+//     if (error.name === "TokenExpiredError") {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Session expired. Please login again.",
+//       });
+//     }
+
+//     res.status(401).json({
+//       success: false,
+//       message: "Unauthorized user. Kindly login.",
+//     });
+//   }
+// };
+
 const authMiddleware = async (req, res, next) => {
-  const token = req.cookies.token;
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
   if (!token) {
     return res.status(401).json({
       success: false,

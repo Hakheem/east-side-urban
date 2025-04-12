@@ -3,14 +3,18 @@ import { Button } from '../ui/button';
 import { GiHamburgerMenu } from "react-icons/gi";
 import { MdLogout } from "react-icons/md";
 import { useDispatch } from 'react-redux';
-import { logoutUser } from '@/store/auth/auth';
+import { logoutUser, resetTokenAndCridentials } from '@/store/auth/auth';
+import { useNavigate } from 'react-router-dom';
 
 const AdminHeader = ({setOpen}) => {
-
+  const navigate = useNavigate();
 const dispatch = useDispatch()
 
   function handleLogout(){
-dispatch(logoutUser())
+// dispatch(logoutUser())
+dispatch(resetTokenAndCridentials())
+sessionStorage.clear()
+navigate('/auth/login')
   }
 
   return (

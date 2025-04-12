@@ -6,6 +6,7 @@ const initialState = {
   user: null,
   isLoading: true,
   error: null,
+  token: null,
 };
 
 // Async action to REGISTER user
@@ -58,12 +59,28 @@ export const logoutUser = createAsyncThunk("auth/logout", async (formData) => {
 });
 
 // Async action to check user authentication
-export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
+// export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
+//   try {
+//     const response = await axios.get(
+//       `${import.meta.env.VITE_URL_API}/api/auth/check-auth`,
+//       {
+//         withCredentials: true,
+//       }
+//     );
+//     return response.data;
+//   } catch (error) {
+//     return { success: false };
+//   }
+// });
+
+export const checkAuth = createAsyncThunk("auth/checkauth", async (token) => {
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_URL_API}/api/auth/check-auth`,
       {
-        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`, // Include the token in the headers
+        }
       }
     );
     return response.data;
@@ -71,6 +88,7 @@ export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
     return { success: false };
   }
 });
+
 
 const authSlice = createSlice({
   name: "auth",
@@ -84,6 +102,11 @@ const authSlice = createSlice({
       state.user = null;
       state.isAuthenticated = false;
     },
+    resetTokenAndCridentials :(state)=>{
+      state.isAuthenticated = false;
+      state.user = null
+      state.token = null
+    }
   },
   extraReducers: (builder) => {
     // Register
@@ -111,6 +134,8 @@ const authSlice = createSlice({
         if (action.payload.success) {
           state.user = action.payload.user;
           state.isAuthenticated = true;
+          state.token = action.payload.token; 
+          sessionStorage.setItem ("token", action.payload.token);
         } else {
           state.user = null;
           state.isAuthenticated = false;
@@ -120,6 +145,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.token = null;
         state.error = action.payload?.message || "Login failed";
       });
 
@@ -153,5 +179,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setUser, clearUser } = authSlice.actions;
+export const { setUser, clearUser, resetTokenAndCridentials } = authSlice.actions;
 export default authSlice.reducer;

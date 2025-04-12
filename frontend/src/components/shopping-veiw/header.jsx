@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSelector, useDispatch } from "react-redux";
 import { shopHeaderMenuItems } from "@/config/config";
-import { logoutUser } from "@/store/auth/auth";
+import { logoutUser, resetTokenAndCridentials } from "@/store/auth/auth";
 import { fetchCartItems } from "@/store/shop/cartSlice";
 import CartWrapper from "./cartWrapper";
 import { Label } from "../ui/label";
@@ -85,8 +85,15 @@ function RightContent() {
   const totalItems =
     cartItems?.items?.reduce((total, item) => total + item.quantity, 0) || 0;
 
+  function handleLogout() {
+    dispatch(resetTokenAndCridentials());
+    sessionStorage.clear();
+    navigate("/auth/login");
+  }
+
   return (
     <div className="flex lg:items-center lg:flex-row flex-col gap-4">
+      {/* Search Button */}
       <Button
         onClick={() => navigate("/search")}
         variant="outline"
@@ -142,7 +149,7 @@ function RightContent() {
             <FaUser className="mr-2 h-4 w-4" /> Account
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => dispatch(logoutUser())}>
+          <DropdownMenuItem onClick={handleLogout}>
             <MdLogout className="mr-2 h-4 w-4" /> Logout
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -150,6 +157,7 @@ function RightContent() {
     </div>
   );
 }
+
 
 // ShopHeader component
 const ShopHeader = () => {
