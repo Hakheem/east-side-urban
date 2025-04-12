@@ -62,7 +62,7 @@ const AuthLogin = () => {
         onSubmit={onSubmit}
       />
 
-      <GoogleSignIn />
+      {/* <GoogleSignIn /> */}
     </div>
   );
 };

@@ -18,20 +18,16 @@ const commonFeatureRouter = require('./routes/common/featureRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const isProduction = process.env.NODE_ENV === 'production';
-const CLIENT_URL = isProduction ? process.env.CLIENT_URL_PROD : process.env.CLIENT_URL_DEV;
-
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173'; 
 
 mongoose
-  .connect(
-    process.env.DB_URL
-    )
+  .connect(process.env.DB_URL)
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
 app.use(
   cors({
-    origin: [CLIENT_URL],
+    origin: CLIENT_URL, 
     methods: ["GET", "POST", "DELETE", "PUT"],
     allowedHeaders: [
       "Content-Type",
