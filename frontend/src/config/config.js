@@ -5,6 +5,12 @@ export const registerFormControl = [
     placeholder: "Enter your username",
     componentType: "input",
     type: "text",
+    validation: {
+      required: true,
+      minLength: 3,
+      pattern: /^[a-zA-Z_]+$/,
+      message: "Username must be at least 3 letters (no numbers allowed)"
+    }
   },
   {
     name: "email",
@@ -12,6 +18,11 @@ export const registerFormControl = [
     placeholder: "Enter your email",
     componentType: "input",
     type: "email",
+    validation: {
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: "Please enter a valid email address"
+    }
   },
   {
     name: "password",
@@ -19,8 +30,15 @@ export const registerFormControl = [
     placeholder: "Enter your password",
     componentType: "input",
     type: "password",
+    validation: {
+      required: true,
+      minLength: 6,
+      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      message: "Password must contain at least 6 characters, including uppercase, lowercase, number, and special character"
+    }
   },
 ];
+
 export const loginFormControl = [
   {
     name: "email",
@@ -28,6 +46,11 @@ export const loginFormControl = [
     placeholder: "Enter your email",
     componentType: "input",
     type: "email",
+    validation: {
+      required: true,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: "Please enter a valid email address"
+    }
   },
   {
     name: "password",
@@ -35,8 +58,13 @@ export const loginFormControl = [
     placeholder: "Enter your password",
     componentType: "input",
     type: "password",
+    validation: {
+      required: true,
+      message: "Please enter your password"
+    }
   },
 ];
+
 
 export const addProductsFormElements = [
   {
@@ -153,6 +181,7 @@ export const filterOptions = {
         {id: 'nike', label: 'Nike'},
         {id: 'puma', label: 'Puma'},
         {id: 'adidas', label: 'Adidas'},
+        {id: 'converse', label: 'Converse'},
         {id: 'timberland', label: 'Timberland'},
         {id: 'new balance', label: 'New balance'},
         {id: 'vans', label: 'Vans'},
@@ -174,7 +203,10 @@ export const addressFormControls = [
     componentType: 'input',
     type: 'text',
     placeholder: 'Enter your address',
-    required: true,
+    validation: {
+      required: true,
+      message: 'Address is required'
+    }
   },
   {
     label: 'City',
@@ -182,27 +214,42 @@ export const addressFormControls = [
     componentType: 'input',
     type: 'text',
     placeholder: 'Enter your city',
-    required: true,
+    validation: {
+      required: true,
+      message: 'City is required'
+    }
   },
- { 
-  label:'Zipcode',
-  name: 'zipcode',
-componentType: 'input',
-type: 'text',
-placeholder: 'Enter your Zipcode',
-
-},
-{
-label: 'Phone',
-name: 'phone',
-componentType: 'input',
-type: 'text',
-placeholder: 'Enter your Phone',
-},
-{
-  label: 'Notes',
-  name: 'notes',
-  componentType: 'textarea',
-  placeholder: 'Enter any special instructions or notes',
-}
-]
+  { 
+    label: 'Zipcode',
+    name: 'zipcode',
+    componentType: 'input',
+    type: 'text',
+    placeholder: 'Enter your Zipcode',
+    validation: {
+      required: true,
+      pattern: /^\d{5}(?:[-\s]\d{4})?$/,
+      message: 'Please enter a valid zipcode'
+    }
+  },
+  {
+    label: 'Phone',
+    name: 'phone',
+    componentType: 'input',
+    type: 'tel',
+    placeholder: 'Enter your Phone',
+    validation: {
+      required: true,
+      pattern: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
+      message: 'Please enter a valid phone number'
+    }
+  },
+  {
+    label: 'Notes',
+    name: 'notes',
+    componentType: 'textarea',
+    placeholder: 'Enter any special instructions or notes',
+    validation: {
+      required: false
+    }
+  }
+];

@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../../models/User");
+const dotenv = require('dotenv');
+dotenv.config();
 
 // Register
 const registerUser = async (req, res) => {
@@ -16,7 +18,7 @@ const registerUser = async (req, res) => {
   try {
     const checkUser = await User.findOne({ email });
     if (checkUser) {
-      return res.json({
+      return res.status(400).json({
         success: false,
         message: "User already exists with this email.",
       });
@@ -65,19 +67,24 @@ const loginUser = async (req, res) => {
 
     const token = jwt.sign(
       { id: checkUser._id, email: checkUser.email, role: checkUser.role },
-      "CLIENT_SECRET_KEY",
+      process.env.JWT_SECRET_KEY,
       { expiresIn: "1h" }
     );
 
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   secure: true, // Set to false when on localhost and vice versa
-    // });
+    const isProduction = process.env.NODE_ENV === 'production';
+    
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+      maxAge: 3600000, // 1 hour
+      domain: isProduction ? process.env.COOKIE_DOMAIN : undefined
+    });
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      token,
+      token, // Still include in response for flexibility
       user: {
         email: checkUser.email,
         role: checkUser.role,
@@ -96,66 +103,53 @@ const loginUser = async (req, res) => {
 
 // Logout
 const logoutUser = (req, res) => {
-  res.clearCookie("token");
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  res.clearCookie("token", {
+    domain: isProduction ? process.env.COOKIE_DOMAIN : undefined,
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+  });
+  
   res.json({ success: true, message: "Logged out successfully" });
 };
 
 // Auth Middleware
-// const authMiddleware = async (req, res, next) => {
-//   const token = req.cookies.token;
-//   if (!token) {
-//     return res.status(401).json({
-//       success: false,
-//       message: "Please login to access.",
-//     });
-//   }
-
-//   try {
-//     const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
-
-//     req.user = decoded;
-//     next();
-//   } catch (error) {
-//     if (error.name === "TokenExpiredError") {
-//       return res.status(401).json({
-//         success: false,
-//         message: "Session expired. Please login again.",
-//       });
-//     }
-
-//     res.status(401).json({
-//       success: false,
-//       message: "Unauthorized user. Kindly login.",
-//     });
-//   }
-// };
-
 const authMiddleware = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+  console.log('=== AUTH MIDDLEWARE TRIGGERED ===');
+  
+  // Get token from either cookies or Authorization header
+  const token = req.cookies?.token || 
+               req.headers?.authorization?.replace('Bearer ', '');
+
   if (!token) {
-    return res.status(401).json({
+    console.error('No token found in request');
+    return res.status(401).json({ 
       success: false,
-      message: "Please login to access.",
+      message: "Authentication required" 
     });
   }
 
   try {
-    const decoded = jwt.verify(token, "CLIENT_SECRET_KEY");
-
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    console.log('Decoded token:', decoded);
+    
+    req.user = {
+      id: decoded.id, 
+      email: decoded.email,
+      role: decoded.role
+    };
+    
     next();
-  } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        success: false,
-        message: "Session expired. Please login again.",
-      });
-    }
-
-    res.status(401).json({
+  } catch (err) {
+    console.error('Token verification failed:', err);
+    
+    res.clearCookie('token');
+    
+    res.status(401).json({ 
       success: false,
-      message: "Unauthorized user. Kindly login.",
+      message: "Invalid or expired token" 
     });
   }
 };

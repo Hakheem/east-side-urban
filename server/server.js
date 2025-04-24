@@ -25,20 +25,12 @@ mongoose
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
-app.use(
-  cors({
-    origin: CLIENT_URL, 
-    methods: ["GET", "POST", "DELETE", "PUT"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Cache-Control",
-      "Expires",
-      "Pragma",
-    ],
+  app.use(cors({
+    origin: CLIENT_URL,
     credentials: true,
-  })
-);
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+  }));
 
 app.options("*", cors());
 
@@ -57,3 +49,4 @@ app.use("/api/reviews", reviewRouter);
 app.use("/api/common/features", commonFeatureRouter);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+ 

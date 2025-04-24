@@ -7,13 +7,13 @@ import addressSlice from './shop/addressSlice';
 import shopOrdersSlice from './shop/shopOrdersSlice';
 import adminOrderSlice from "./admin/adminOrderSlice";
 import shopSearchSlice from "./shop/searchSlice";
-import reviewSlice from "./shop/reviewSlice";
+import reviewSlice from "./shop/reviewSlice"; 
 import featuresSlice from "./common/featureSlice";
 
 
 const store = configureStore({ 
   reducer: {
-    auth: authReducer,
+    auth: authReducer, 
     adminProducts: adminProductsSlice,
     shopProducts: shopProductsSlice,
     shopCart : cartSlice,

@@ -1,12 +1,19 @@
-const paypal = require('paypal-rest-sdk');
+const paypal = require('@paypal/checkout-server-sdk');
 require('dotenv').config();
 
+// Configure PayPal environment
+const configureEnvironment = () => {
+  const clientId = process.env.PAYPAL_CLIENT_ID;
+  const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
 
-paypal.configure({
-  mode: process.env.PAYPAL_MODE,
-  client_id: process.env.PAYPAL_CLIENT_ID,
-  client_secret: process.env.PAYPAL_CLIENT_SECRET,
-});
- 
-module.exports = paypal;
- 
+  return process.env.PAYPAL_MODE === 'live'
+    ? new paypal.core.LiveEnvironment(clientId, clientSecret)
+    : new paypal.core.SandboxEnvironment(clientId, clientSecret);
+};
+
+const client = new paypal.core.PayPalHttpClient(configureEnvironment());
+
+module.exports = {
+  paypal, 
+  client, 
+};

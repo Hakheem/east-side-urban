@@ -7,3 +7,4 @@ router.get("/fetch", getFilteredProducts);
 router.get("/get/:id", productDetails);
 
 module.exports = router;
+ 

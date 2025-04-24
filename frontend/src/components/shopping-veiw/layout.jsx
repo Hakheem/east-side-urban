@@ -13,5 +13,5 @@ const ShopLayout = () => {
    </div> 
   )
 }
-
+ 
 export default ShopLayout

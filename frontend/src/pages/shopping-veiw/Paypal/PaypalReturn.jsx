@@ -9,34 +9,33 @@ const PaypalReturn = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const params = new URLSearchParams(location.search);
-  const paymentId = params.get('paymentId');
-  const payerId = params.get('PayerID'); 
-
   useEffect(() => {
     const handlePaymentCapture = async () => {
-      if (paymentId && payerId) {
-        const orderId = sessionStorage.getItem('currentOrderId');
-        if (!orderId) {
-          navigate('/payment-failure');
-          return;
-        }
+      const params = new URLSearchParams(location.search);
+      const paymentId = params.get('token'); // PayPal sends "token" not "paymentId"
 
-        try {
-          await dispatch(capturePayment({ paymentId, payerId, orderId })).unwrap();
-          sessionStorage.removeItem('currentOrderId');
-          navigate('/payment-success');
-        } catch (error) {
-          console.error('Payment Capture Error:', error);
-          navigate('/payment-failure');
-        }
-      } else {
+      const storedOrder = sessionStorage.getItem('currentOrder');
+      const parsedOrder = storedOrder ? JSON.parse(storedOrder) : null;
+      const orderId = parsedOrder?.orderId;
+
+      if (!paymentId || !orderId) {
+        console.error('Missing paymentId or orderId');
+        navigate('/payment-failure');
+        return;
+      }
+
+      try {
+        await dispatch(capturePayment({ paymentId, orderId })).unwrap();
+        sessionStorage.removeItem('currentOrder');
+        navigate('/payment-success');
+      } catch (error) {
+        console.error('Payment Capture Error:', error);
         navigate('/payment-failure');
       }
     };
 
     handlePaymentCapture();
-  }, [paymentId, payerId, dispatch, navigate]);
+  }, [dispatch, location.search, navigate]);
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-50">

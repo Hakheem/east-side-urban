@@ -6,7 +6,7 @@ const initialState = {
   user: null,
   isLoading: true,
   error: null,
-  token: null,
+  tokenInMemory: null, // For temporary storage during session
 };
 
 // Async action to REGISTER user
@@ -16,9 +16,7 @@ export const registerUser = createAsyncThunk(
     const response = await axios.post(
       `${import.meta.env.VITE_URL_API}/api/auth/register`,
       formData,
-      {
-        withCredentials: true,
-      }
+      { withCredentials: true }
     );
     return response.data;
   }
@@ -30,19 +28,25 @@ export const loginUser = createAsyncThunk("auth/login", async (formData) => {
     const response = await axios.post(
       `${import.meta.env.VITE_URL_API}/api/auth/login`,
       formData,
-      { withCredentials: true }
+      { 
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
-    return response.data;
+    return {
+      ...response.data,
+      tokenInMemory: response.data.token // Temporary storage
+    };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "An unexpected error occurred",
+      message: error.response?.data?.message || "Login failed",
     };
   }
 });
 
 // Async action to LOGOUT user
-export const logoutUser = createAsyncThunk("auth/logout", async (formData) => {
+export const logoutUser = createAsyncThunk("auth/logout", async () => {
   try {
     const response = await axios.post(
       `${import.meta.env.VITE_URL_API}/api/auth/logout`,
@@ -53,33 +57,22 @@ export const logoutUser = createAsyncThunk("auth/logout", async (formData) => {
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || "An unexpected error occurred",
+      message: error.response?.data?.message || "Logout failed",
     };
   }
 });
 
-// Async action to check user authentication
-// export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
-//   try {
-//     const response = await axios.get(
-//       `${import.meta.env.VITE_URL_API}/api/auth/check-auth`,
-//       {
-//         withCredentials: true,
-//       }
-//     );
-//     return response.data;
-//   } catch (error) {
-//     return { success: false };
-//   }
-// });
-
-export const checkAuth = createAsyncThunk("auth/checkauth", async (token) => {
+// Async action to CHECK authentication
+export const checkAuth = createAsyncThunk("auth/checkauth", async (_, { getState }) => {
   try {
     const response = await axios.get(
       `${import.meta.env.VITE_URL_API}/api/auth/check-auth`,
-      {
+      { 
+        withCredentials: true,
         headers: {
-          Authorization: `Bearer ${token}`, // Include the token in the headers
+          ...(getState().auth.tokenInMemory ? {
+            Authorization: `Bearer ${getState().auth.tokenInMemory}`
+          } : {})
         }
       }
     );
@@ -89,23 +82,15 @@ export const checkAuth = createAsyncThunk("auth/checkauth", async (token) => {
   }
 });
 
-
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    setUser: (state, action) => {
-      state.user = action.payload;
-      state.isAuthenticated = true;
-    },
-    clearUser: (state) => {
+    resetAuthState: (state) => {
+      state.isAuthenticated = false;
       state.user = null;
-      state.isAuthenticated = false;
-    },
-    resetTokenAndCridentials :(state)=>{
-      state.isAuthenticated = false;
-      state.user = null
-      state.token = null
+      state.tokenInMemory = null;
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
@@ -114,10 +99,8 @@ const authSlice = createSlice({
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = false;
-        state.user = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
@@ -134,18 +117,18 @@ const authSlice = createSlice({
         if (action.payload.success) {
           state.user = action.payload.user;
           state.isAuthenticated = true;
-          state.token = action.payload.token; 
-          sessionStorage.setItem ("token", action.payload.token);
+          state.tokenInMemory = action.payload.tokenInMemory;
         } else {
           state.user = null;
           state.isAuthenticated = false;
+          state.error = action.payload.message;
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.tokenInMemory = null;
         state.error = action.payload?.message || "Login failed";
       });
 
@@ -156,7 +139,7 @@ const authSlice = createSlice({
       })
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.isLoading = false;
-        if (action.payload.success) {
+        if (action.payload?.success) {
           state.user = action.payload.user;
           state.isAuthenticated = true;
         } else {
@@ -164,20 +147,22 @@ const authSlice = createSlice({
           state.user = null;
         }
       })
-      .addCase(checkAuth.rejected, (state, action) => {
+      .addCase(checkAuth.rejected, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.error = action.error.message || "User is unauthorized";
-      })
-      // logout
-      .addCase(logoutUser.fulfilled, (state, action) => {
-        state.isLoading = false;
+      });
+
+    // Logout
+    builder
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.isLoading = false; 
         state.user = null;
         state.isAuthenticated = false;
+        state.tokenInMemory = null;
       });
   },
 });
 
-export const { setUser, clearUser, resetTokenAndCridentials } = authSlice.actions;
+export const { resetAuthState } = authSlice.actions;
 export default authSlice.reducer;

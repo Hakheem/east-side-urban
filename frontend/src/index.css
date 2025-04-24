@@ -82,30 +82,75 @@
 .heroTxt {
   font-family: "Courgette", cursive;
 }
-/* App.css or your global CSS file */
-
-/* For Webkit browsers (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
-  width: 8px; /* Width of the vertical scrollbar */
-  height: 8px; /* Height of the horizontal scrollbar */
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1; /* Track color */
+  background: #f1f1f1;
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #888; /* Scrollbar thumb color */
+  background: #888;
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; /* Scrollbar thumb color on hover */
+  background: #555;
 }
 
-/* For Firefox */
 html {
-  scrollbar-width: thin; /* Makes scrollbar thinner */
-  scrollbar-color: #888 #f1f1f1; /* Thumb color and track color */
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f1f1f1;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-progress {
+  animation: progress linear forwards;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 2px;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+}
+
+.dark .scrollbar-thin::-webkit-scrollbar-track {
+  background: #1f2937;
 }

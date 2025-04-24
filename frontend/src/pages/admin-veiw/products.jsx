@@ -3,9 +3,16 @@ import { Button } from "../../components/ui/button";
 import {
   Sheet,
   SheetContent,
-  SheetHeader, 
+  SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import Form from "@/components/common/Form";
 import { addProductsFormElements } from "@/config/config";
 import ProductImageUpload from "./productImageUpload";
@@ -16,7 +23,7 @@ import {
   editProduct,
   fetchProducts,
 } from "@/store/admin/ProductsSlice";
-import { toast } from "react-toastify";
+import { useToast } from "@/hooks/use-toast";
 import AdminProductDisplay from "@/components/admin-veiw/productDisplay";
 
 const initialFormData = {
@@ -37,9 +44,12 @@ const AdminProducts = () => {
   const [uploadedImageUrl, setUploadedImageUrl] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
   const [editedId, setEditedId] = useState(null);
+  const [showDeleteOverlay, setShowDeleteOverlay] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
 
   const dispatch = useDispatch();
   const { productList } = useSelector((state) => state.adminProducts);
+  const { toast } = useToast();
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -51,7 +61,10 @@ const AdminProducts = () => {
             setFormData(initialFormData);
             setCreateProducts(false);
             setEditedId(null);
-            toast.success("Product updated");
+            toast({
+              title: "✅ Product Updated",
+              description: "Changes have been successfully saved.",
+            });
           }
         })
       : dispatch(
@@ -65,9 +78,15 @@ const AdminProducts = () => {
             setImageFile(null);
             setFormData(initialFormData);
             setCreateProducts(false);
-            toast.success("Product added");
+            toast({
+              title: "🛍️ Product Added",
+              description: "A new product has been successfully added.",
+            });
           } else {
-            toast.error("Failed to add product");
+            toast({
+              title: "❌ Failed to Add Product",
+              description: "Something went wrong. Please try again.",
+            });
           }
         });
   };
@@ -78,14 +97,31 @@ const AdminProducts = () => {
       .every((item) => item);
   }
 
-  function handleDelete(getCurrentProductId) {
-    dispatch(deleteProduct(getCurrentProductId)).then((data) => {
-      if (data.payload.success) {
+  const confirmDelete = () => {
+    if (!productToDelete) return;
+
+    dispatch(deleteProduct(productToDelete)).then((data) => {
+      if (data?.payload?.success) {
         dispatch(fetchProducts());
-        toast.success("Product deleted");
+        toast({
+          title: "🗑️ Product Deleted",
+          description: "The product was permanently removed.",
+        });
+      } else {
+        toast({
+          title: "❌ Deletion Failed",
+          description: "Could not delete product. Try again.",
+        });
       }
+      setShowDeleteOverlay(false);
+      setProductToDelete(null);
     });
-  }
+  };
+
+  const handleDeleteClick = (id) => {
+    setProductToDelete(id);
+    setShowDeleteOverlay(true);
+  }; 
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -97,7 +133,6 @@ const AdminProducts = () => {
         <Button onClick={() => setCreateProducts(true)}>Add new product</Button>
       </div>
 
-      {/* Products */}
       <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
         {productList && productList.length > 0
           ? productList.map((productItem) => (
@@ -107,13 +142,12 @@ const AdminProducts = () => {
                 setEditedId={setEditedId}
                 setCreateProducts={setCreateProducts}
                 setFormData={setFormData}
-                handleDelete={handleDelete}
+                handleDelete={handleDeleteClick}
               />
             ))
           : null}
       </div>
 
-      {/* Add Product Form */}
       <Sheet
         open={createProducts}
         onOpenChange={(isOpen) => {
@@ -151,6 +185,38 @@ const AdminProducts = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Delete Confirmation Overlay */}
+      <Dialog open={showDeleteOverlay} onOpenChange={setShowDeleteOverlay}>
+        <DialogContent className="sm:max-w-[425px] rounded-lg">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-center">
+              Confirm Deletion
+            </DialogTitle>
+            <DialogDescription className="text-gray-600 text-center">
+              This will permanently delete the product. This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex justify-center gap-3 pt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteOverlay(false)}
+              className="px-6"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              className="px-6"
+            >
+              Delete Permanently
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Fragment>
   );
 };

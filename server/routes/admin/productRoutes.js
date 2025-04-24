@@ -13,7 +13,7 @@ const router = express.Router();
 router.post("/upload-image", upload.single("image"), handleImageUpload);
 router.post("/add", addProduct);
 router.get("/fetch", fetchProducts);
-router.put("/edit/:id", editProduct);
+router.put("/edit/:id", editProduct); 
 router.delete("/delete/:id", deleteProduct);
 
 module.exports = router;

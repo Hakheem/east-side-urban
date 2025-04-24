@@ -19,12 +19,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import AdminOrderDetails from "./adminOrderDetails";
 
+// Helper function to format the amount
+const formatAmount = (amount, method) => {
+  if (typeof amount !== "number") return "N/A";
+  const finalAmount = method === "Paypal" ? amount * 125 : amount;
+  const currency = "Ksh";
+  return `${currency}.${finalAmount.toFixed(2)}`;
+};
+
 const AdminOrders = () => {
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
 
   const dispatch = useDispatch();
-  const { orderList, orderDetails, isLoading } = useSelector((state) => state.adminOrder);
+  const { orderList, orderDetails, isLoading } = useSelector(
+    (state) => state.adminOrder
+  );
 
   useEffect(() => {
     dispatch(getAllOrdersForAdmin());
@@ -41,14 +51,18 @@ const AdminOrders = () => {
     dispatch(resetAdminOrderDetails());
   };
 
-  const sortedOrders = orderList ? [...orderList].sort((a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)) : [];
+  const sortedOrders = orderList
+    ? [...orderList].sort(
+        (a, b) => new Date(b?.orderDate) - new Date(a?.orderDate)
+      )
+    : [];
 
   useEffect(() => {
     if (orderDetails?.orderStatus) {
       console.log("Order status updated, fetching all orders...");
       dispatch(getAllOrdersForAdmin());
     }
-  }, [orderDetails?.orderStatus, dispatch]);  
+  }, [orderDetails?.orderStatus, dispatch]);
 
   return (
     <Card>
@@ -78,24 +92,50 @@ const AdminOrders = () => {
             ) : sortedOrders?.length > 0 ? (
               sortedOrders.map((orderItem) => (
                 <TableRow key={orderItem?._id}>
-                  <TableCell className="font-medium">{orderItem?._id}</TableCell>
-                  <TableCell>{orderItem?.orderDate.split("T")[0]}</TableCell>
+                  <TableCell className="font-medium">
+                    {orderItem?._id}
+                  </TableCell>
+                  <TableCell>
+                    {orderItem?.orderDate
+                      ? new Date(orderItem.orderDate).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )
+                      : "N/A"}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       className={`py-1 px-3 ${
-                        orderItem?.orderStatus === "confirmed" ? "bg-green-500" :
-                        orderItem?.orderStatus === "shipped" ? "bg-blue-500" :
-                        orderItem?.orderStatus === "outForDelivery" ? "bg-yellow-500" :
-                        orderItem?.orderStatus === "delivered" ? "bg-purple-500" :
-                        orderItem?.orderStatus === "rejected" ? "bg-red-500" : "bg-black"
+                        orderItem?.orderStatus === "confirmed"
+                          ? "bg-green-500"
+                          : orderItem?.orderStatus === "shipped"
+                          ? "bg-blue-500"
+                          : orderItem?.orderStatus === "outForDelivery"
+                          ? "bg-yellow-500"
+                          : orderItem?.orderStatus === "delivered"
+                          ? "bg-purple-500"
+                          : orderItem?.orderStatus === "rejected"
+                          ? "bg-red-500"
+                          : "bg-black"
                       }`}
                     >
                       {orderItem?.orderStatus}
                     </Badge>
                   </TableCell>
-                  <TableCell>${orderItem?.totalAmount}</TableCell>
                   <TableCell>
-                    <Button onClick={() => handleViewDetails(orderItem?._id)}>View Details</Button>
+                    {formatAmount(
+                      orderItem?.totalAmount,
+                      orderItem?.paymentMethod
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Button onClick={() => handleViewDetails(orderItem?._id)}>
+                      View Details
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

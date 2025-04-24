@@ -6,10 +6,10 @@ const initialState = {
   isLoading: false,
   productList: [],
   error: null,
-  productDetails: null,
+  productDetails: null, 
 };
 
-// Fetch products
+// Fetch products 
 export const fetchFilteredProducts = createAsyncThunk(
   "products/fetch",
   async ({ filterParams, sortParams }, thunkAPI) => {

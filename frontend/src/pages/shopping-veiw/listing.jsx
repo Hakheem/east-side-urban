@@ -19,7 +19,8 @@ import ShopProductDisplay from "./shopProductsDisplay";
 import { useSearchParams } from "react-router-dom";
 import ProductDetails from "./productDetails";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
-import { toast } from "react-toastify";
+import { useToast } from "@/hooks/use-toast"
+
 
 const Listing = () => {
   const dispatch = useDispatch();
@@ -27,13 +28,14 @@ const Listing = () => {
     (state) => state.shopProducts
   );
   const { user } = useSelector((state) => state.auth);
-  const { cartItems } = useSelector((state) => state.shopCart);
+  const { cartItems, isLoading: cartLoading } = useSelector((state) => state.shopCart);
   const [filters, setFilters] = useState({});
   const [sort, setSort] = useState("price-lowtohigh");
   const [searchParams, setSearchParams] = useSearchParams();
   const [showProductDetails, setShowProductDetails] = useState(false);
-
+  const { toast } = useToast()
   const categorySearchParam = searchParams.get("category");
+
   const handleSort = (value) => {
     setSort(value);
   };
@@ -53,8 +55,8 @@ const Listing = () => {
         filtersCopy[sectionId] = filtersCopy[sectionId].filter(
           (option) => option !== currentOption
         );
-      }
-    }
+      } 
+    } 
 
     setFilters(filtersCopy);
     sessionStorage.setItem("filters", JSON.stringify(filtersCopy));
@@ -74,46 +76,40 @@ const Listing = () => {
   };
 
   // Handle add to cart functionality
-  const handleAddToCart = (currentId, getTotalStock) => {
-    let getCartItems = cartItems.items || [];
-
-    if (getCartItems.length) {
-      const indexOfCurrentItem = getCartItems.findIndex(
-        (item) => item.productId === currentId
-      );
-      if (indexOfCurrentItem > -1) {
-        const getQuantity = getCartItems[indexOfCurrentItem].quantity;
-        if (getQuantity >= getTotalStock) {
-          toast.info("Product quantity in cart exceeds available stock", {
-            position: "top-center",
-          });
-          return;
-        }
+  const handleAddToCart = async (currentId, getTotalStock) => {
+    try {
+      // Check stock for both guest and authenticated users
+      const existingItem = cartItems.find(item => item.productId === currentId);
+      if (existingItem && existingItem.quantity >= getTotalStock) {
+        toast({
+          title: "⚠️ Stock Limit",
+          description: "Product quantity in cart exceeds available stock",
+          variant: "default",
+        });
+        return;
       }
-    }
 
-    if (!user?.id) return;
-
-    const product = productList.find((p) => p.id === currentId);
-
-    dispatch(
-      addToCart({
-        userId: user.id,
+      const product = productList.find((p) => p._id === currentId);
+      const result = await dispatch(addToCart({
         productId: currentId,
-        quantity: 1,
-      })
-    )
-      .then((data) => {
-        if (data?.payload.success) {
-          dispatch(fetchCartItems(user.id));
-          toast.success(`${product?.title || "Product"} added to cart`, {
-            position: "top-center",
-          });
-        }
-      })
-      .catch((error) => {
-        console.error("Error adding to cart:", error);
+        quantity: 1
+      })).unwrap();
+
+      if (result.success) {
+        toast({
+          title: "🛒 Added to Cart",
+          description: `${product?.title || "Product"} added to cart successfully!`,
+          variant: "default",
+        });
+        dispatch(fetchCartItems()); // Refresh cart items
+      }
+    } catch (error) {
+      toast({
+        title: "❌ Error",
+        description: error.message || "Failed to add to cart",
+        variant: "destructive",
       });
+    }
   };
 
   // Load initial filters and sort from session storage
@@ -141,6 +137,11 @@ const Listing = () => {
       fetchFilteredProducts({ filterParams: filters, sortParams: sort })
     );
   }, [dispatch, filters, sort]);
+
+  // Load cart on initial render
+  useEffect(() => {
+    dispatch(fetchCartItems());
+  }, [dispatch]);
 
   // Show product details modal
   useEffect(() => {
@@ -191,7 +192,7 @@ const Listing = () => {
           {productList.length > 0 ? (
             productList.map((productItem, index) => (
               <ShopProductDisplay
-                key={productItem.id || index}
+                key={productItem._id || index}
                 product={productItem}
                 handleProductDetails={handleProductDetails}
                 handleAddToCart={handleAddToCart}

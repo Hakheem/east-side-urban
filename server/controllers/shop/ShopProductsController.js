@@ -11,7 +11,7 @@ const getFilteredProducts = async (req, res) => {
     if (brand) {
       filter.brand = { $in: brand.split(",") };
     }
-
+ 
     let sort = {};
     switch (sortBy) {
       case "price-lowtohigh":

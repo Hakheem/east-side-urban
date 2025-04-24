@@ -1,51 +1,45 @@
-import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 
-const CheckAuth = ({ isAuthenticated, children, user }) => {
+const CheckAuth = ({ isAuthenticated, user, children }) => {
   const location = useLocation();
 
-  if (location.pathname === "/") {
-    if (!isAuthenticated) {
-      return <Navigate to="/auth/login" />;
-    } else if (isAuthenticated) {
-      if (user?.role === "admin") {
-        return <Navigate to="/admin/dashboard" />;
-      } else {
-        return <Navigate to="/home" />;
-      }
-    }
-  }
+  console.log("CheckAuth location:", location.pathname);
+  console.log("isAuthenticated:", isAuthenticated);
+  console.log("user:", user);
 
   if (!isAuthenticated) {
-    if (
-      !location.pathname.includes("/login") &&
-      !location.pathname.includes("/register")
-    ) {
-      return <Navigate to="/auth/login" />;
-    }
+    console.log("Redirecting guest to login...");
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  if (isAuthenticated) {
-    if (
-      location.pathname.includes("/login") ||
-      location.pathname.includes("/register")
-    ) {
-      if (user?.role === "admin") {
-        return <Navigate to="/admin/dashboard" />;
-      } else {
-        return <Navigate to="/home" />;
-      }
-    }
-
-    if (user?.role !== "admin" && location.pathname.includes("/admin")) {
-      return <Navigate to="/unauthorised" />;
-    }
-
-    if (user?.role === "admin" && location.pathname.includes("/home")) {
-      return <Navigate to="/admin/dashboard" />;
-    }
+  if (user?.role === "admin" && !location.pathname.startsWith("/admin")) {
+    console.log("Admin detected. Redirecting to /admin/dashboard...");
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
+  if (location.pathname.startsWith("/admin") && user?.role !== "admin") {
+    console.log(
+      "Non-admin trying to access admin route. Redirecting to /unauthorised..."
+    );
+    return <Navigate to="/unauthorised" replace />;
+  }
+
+  if (
+    isAuthenticated &&
+    (location.pathname.includes("/login") ||
+      location.pathname.includes("/register"))
+  ) {
+    console.log(
+      "Authenticated user trying to access login/register. Redirecting..."
+    );
+    return user?.role === "admin" ? (
+      <Navigate to="/admin/dashboard" replace />
+    ) : (
+      <Navigate to="/home" replace />
+    );
+  }
+
+  console.log("Authorized. Rendering children.");
   return children;
 };
 
