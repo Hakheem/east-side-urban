@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { GiHamburgerMenu } from "react-icons/gi";
 import { MdLogout } from "react-icons/md";
 import { useDispatch } from 'react-redux';
-import { resetAuthState, logoutUser } from '@/store/auth/auth'; 
+import {  logoutUser } from '@/store/auth/auth'; 
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast"
 
@@ -17,7 +17,7 @@ const AdminHeader = ({ setOpen }) => {
   const handleLogout = async () => {
     try {
       await dispatch(logoutUser()).unwrap();
-      dispatch(resetAuthState());
+      // dispatch(resetAuthState());
       navigate('/auth/login');
     } catch (error) {
       console.error('Logout failed:', error);

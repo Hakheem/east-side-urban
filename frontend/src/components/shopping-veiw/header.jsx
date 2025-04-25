@@ -17,7 +17,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSelector, useDispatch } from "react-redux";
 import { shopHeaderMenuItems } from "@/config/config";
-import { logoutUser, resetAuthState } from "@/store/auth/auth";
+import { logoutUser } from "@/store/auth/auth";
 import { fetchCartItems } from "@/store/shop/cartSlice";
 import CartWrapper from "./cartWrapper";
 import { Label } from "../ui/label";
@@ -210,7 +210,7 @@ function RightContent() {
 
   function handleLogout() {
     dispatch(logoutUser());
-    dispatch(resetAuthState());
+    // dispatch(resetAuthState());
     navigate("/home");
   }
 

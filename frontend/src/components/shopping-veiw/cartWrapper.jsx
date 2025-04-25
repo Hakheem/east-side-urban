@@ -11,27 +11,33 @@ import { fetchCartItems } from "@/store/shop/cartSlice";
 
 const CartWrapper = ({ setOpenCartSheet }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { toast } = useToast();
+
   const { cartItems } = useSelector((state) => state.shopCart);
   const { productList } = useSelector((state) => state.shopProducts);
-  const { toast } = useToast();
-  const dispatch = useDispatch()
+
 
   // Map cart items with product details
   const enrichedCartItems = cartItems.map((cartItem) => {
     const product = productList?.find(
       (p) => String(p._id) === String(cartItem.productId)
     );
-
-    return {
+ 
+    const enriched = {
       ...cartItem,
       ...(product || {}),
       stock: product?.totalStock ?? cartItem.stock ?? 0,
       id: cartItem.productId,
     };
+
+    console.log("🔍 Enriched Cart Item:", enriched);
+    return enriched;
   });
 
   useEffect(() => {
     if (!productList || productList.length === 0) {
+      console.log("📡 Dispatching fetchCartItems...");
       dispatch(fetchCartItems());
     }
   }, []);

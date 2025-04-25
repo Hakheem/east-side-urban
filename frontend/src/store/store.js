@@ -22,7 +22,7 @@ const store = configureStore({
     adminOrder : adminOrderSlice, 
     shopSearch : shopSearchSlice, 
     shopReviews : reviewSlice, 
-    commonFeatures : featuresSlice, 
+    commonFeatures : featuresSlice,  
   },
 });
 

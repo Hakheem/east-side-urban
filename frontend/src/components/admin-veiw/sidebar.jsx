@@ -29,9 +29,10 @@ const adminSidebarMenuItems = [
 
 const MenuItems = ({ setOpen }) => {
   const navigate = useNavigate();
+  const currentPath = window.location.pathname;
 
   return (
-    <nav className="mt-8 flex-col flex gap-2">
+    <nav className="mt-8 flex-col flex gap-1">
       {adminSidebarMenuItems.map((menuItem) => (
         <div
           key={menuItem.id}
@@ -41,10 +42,14 @@ const MenuItems = ({ setOpen }) => {
               setOpen(false);
             }
           }}
-          className="flex text-xl items-center gap-2 rounded-md px-3 py-2 cursor-pointer
-        text-muted-foreground hover:bg-muted- hover:text-foreground"
+          className={`flex text-base items-center gap-3 rounded-md px-4 py-3 cursor-pointer transition-colors
+            ${
+              currentPath.startsWith(menuItem.path)
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            }`}
         >
-          {menuItem.icon}
+          <span className="text-lg">{menuItem.icon}</span>
           <span>{menuItem.label}</span>
         </div>
       ))}
@@ -57,32 +62,31 @@ const AdminSidebar = ({ open, setOpen }) => {
 
   return (
     <Fragment>
+      {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="w-64">
           <div className="flex flex-col h-full">
             <SheetHeader className="border-b">
-              <SheetTitle className="flex items-center gap-2 justify-center my-6">
-                <GrUserAdmin size={30} />
-                <h1 className="text-2xl font-extrabold">Admin Panel</h1>
+              <SheetTitle className="flex items-center gap-3 my-6">
+                <GrUserAdmin size={24} />
+                <h1 className="text-xl font-bold">Admin Panel</h1>
               </SheetTitle>
             </SheetHeader>
-            <MenuItems setOpen={setOpen} /> 
+            <MenuItems setOpen={setOpen} />
           </div>
         </SheetContent>
       </Sheet>
-      <aside>
-        <div className="hidden w-64 flex-col border-r bg-background p-6 lg:flex">
-          <div
-            onClick={() => navigate("/admin/dashboard")}
-            className="flex gap-2 items-center cursor-pointer"
-          >
-            <GrUserAdmin size={30} />
-            <h1 className="text-2xl font-extrabold">Admin Panel</h1>
-          </div>
+
+      {/* Desktop Sidebar - Structure remains exactly the same */}
+      <aside className="hidden lg:block w-64 border-r bg-background p-6">
+        <div
+          onClick={() => navigate("/admin/dashboard")}
+          className="flex gap-3 items-center cursor-pointer mb-8"
+        >
+          <GrUserAdmin size={24} />
+          <h1 className="text-xl font-bold">Admin Panel</h1>
         </div>
-        <div className="hidden lg:block pl-6">
-          <MenuItems setOpen={setOpen} />
-        </div>
+        <MenuItems />
       </aside>
     </Fragment>
   );

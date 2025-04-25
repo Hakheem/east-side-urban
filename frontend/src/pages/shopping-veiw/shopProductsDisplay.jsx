@@ -2,21 +2,43 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useDispatch, useSelector } from "react-redux";
-import { addToCart } from "@/store/shop/cartSlice";
+import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
 import { useToast } from "@/hooks/use-toast"
+import { useEffect } from "react";
 
 const ShopProductsDisplay = ({ product, handleProductDetails }) => {
   const dispatch = useDispatch();
-  const { cartItems } = useSelector((state) => state.shopCart);
-  const { toast } = useToast()
+  const { cartItems, isLoading } = useSelector((state) => state.shopCart);
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { toast } = useToast();
+
+  // Refresh cart items when authentication status changes
+  useEffect(() => {
+    dispatch(fetchCartItems());
+  }, [isAuthenticated, dispatch]);
 
   const handleAddToCart = async (productId, totalStock) => {
     try {
+      // Check if product already in cart
       const existingItem = cartItems.find(item => item.productId === productId);
-      if (existingItem && existingItem.quantity >= totalStock) {
+      const currentQuantity = existingItem?.quantity || 0;
+      
+      // For logged-in users, we need to check server-side stock
+      if (isAuthenticated) {
+        if (currentQuantity >= totalStock) {
+          toast({
+            title: "⚠️ Stock Limit Reached",
+            description: `You already have ${currentQuantity} in cart (max ${totalStock})`,
+            variant: "default",
+          });
+          return;
+        }
+      } 
+      // For guests, check local stock
+      else if (currentQuantity >= totalStock) {
         toast({
           title: "⚠️ Stock Limit Reached",
-          description: `You already have ${existingItem.quantity} ${product.title} in cart (max ${totalStock})`,
+          description: `You already have ${currentQuantity} in cart (max ${totalStock})`,
           variant: "default",
         });
         return;
@@ -25,12 +47,17 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
       const result = await dispatch(addToCart({
         productId,
         quantity: 1
-      })).unwrap();
+      }));
 
-      if (result.success) {
+      // For logged-in users, refresh cart after adding
+      if (isAuthenticated) {
+        await dispatch(fetchCartItems());
+      }
+
+      if (addToCart.fulfilled.match(result)) {
         toast({
           title: "🛒 Added to Cart",
-          description: `${product.title} added to cart successfully!`,
+          description: `${product.title} added to cart!`,
           variant: "success",
         });
       }

@@ -19,7 +19,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, isAuthenticated } = useSelector((state) => state.auth);
   const { cartItems, isLoading: cartLoading } = useSelector(
     (state) => state.shopCart
   );
@@ -32,12 +32,13 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
       const existingItem = cartItems.find(
         (item) => item.productId === currentId
       );
-      const totalRequested = (existingItem?.quantity || 0) + quantity;
+      const currentQuantity = existingItem?.quantity || 0;
+      const totalRequested = currentQuantity + quantity;
 
       if (totalRequested > getTotalStock) {
         toast({
           title: "⚠️ Stock Limit",
-          description: `You can't add more than ${getTotalStock} items of this product`,
+          description: `You can't add more than ${getTotalStock} items`,
           variant: "default",
         });
         return;
@@ -48,14 +49,17 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
           productId: currentId,
           quantity: quantity,
         })
-      ).unwrap();
+      );
 
-      if (result.success) {
+      // Refresh cart after adding if logged in
+      if (isAuthenticated) {
+        await dispatch(fetchCartItems());
+      }
+
+      if (addToCart.fulfilled.match(result)) {
         toast({
           title: "🛒 Added to Cart",
-          description: `${quantity} ${
-            quantity > 1 ? "items" : "item"
-          } added to cart successfully!`,
+          description: `${quantity} ${quantity > 1 ? "items" : "item"} added!`,
           variant: "default",
         });
         setQuantity(1);
@@ -69,16 +73,16 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
     }
   };
 
-  function handleDialogClose() {
+  const handleDialogClose = () => {
     setOpen(false);
     dispatch(setProductDetails());
-  }
+  };
 
-  function handleRatingChange(getRating) {
+  const handleRatingChange = (getRating) => {
     setRating(getRating);
-  }
+  };
 
-  async function handleAddReview() {
+  const handleAddReview = async () => {
     if (!user?.id) {
       toast({
         title: "🔒 Login Required",
@@ -116,7 +120,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
         variant: "destructive",
       });
     }
-  }
+  };
 
   useEffect(() => {
     if (productDetails !== null) {
@@ -135,6 +139,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
   const isInCart = cartItems.some(
     (item) => item.productId === productDetails?._id
   );
+  const cartQuantity = cartItems.find(item => item.productId === productDetails?._id)?.quantity || 0;
 
   return (
     <Dialog open={open} onOpenChange={handleDialogClose}>
@@ -256,7 +261,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
                     <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
                   </svg>
                   <span>
-                    Add {quantity > 1 ? `${quantity} to Cart` : "to Cart"}
+                    {isInCart ? `Added (${cartQuantity})` : quantity > 1 ? `Add ${quantity} to Cart` : "Add to Cart"}
                   </span>
                 </span>
               </Button>
@@ -265,7 +270,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
 
           <hr className="my-4 border-gray-200 dark:border-gray-700" />
 
-          {/* Reviews Section with Custom Scrollbar */}
+          {/* Reviews Section */}
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Customer Reviews</h2>
 

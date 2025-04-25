@@ -6,8 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 import { deleteCartItem, updateCartItemsQty } from "@/store/shop/cartSlice";
 
 const CartContents = ({ cartItem }) => {
-  const dispatch = useDispatch(); 
+  const dispatch = useDispatch();
   const { toast } = useToast();
+
+  console.log("🧾 Rendering CartContents:", cartItem);
 
   const currentQty = cartItem.quantity || 0;
   const availableStock = Number(cartItem?.stock || 0);
@@ -59,7 +61,7 @@ const CartContents = ({ cartItem }) => {
         updateCartItemsQty({
           productId: cartItem.productId,
           quantity: newQty,
-        })
+        }) 
       ).unwrap();
     } catch (error) {
       toast({

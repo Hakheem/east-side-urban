@@ -5,6 +5,7 @@ import Form from "../../components/common/Form";
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/store/auth/auth";
 import { useToast } from "@/hooks/use-toast";
+import { mergeCarts, fetchCartItems } from "@/store/shop/cartSlice";
 
 const initialState = {
   email: "",
@@ -17,14 +18,17 @@ const AuthLogin = () => {
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const { user, isAuthenticated, isLoading, error } = useSelector(
     (state) => state.auth
   );
+  const guestCart = useSelector((state) => state.shopCart.guestCart);
   const { toast } = useToast();
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData));
+    console.log("🧪 Attempting login with formData:", formData);
+    await dispatch(loginUser(formData));
   };
 
   const handleForgotPassword = async () => {
@@ -37,33 +41,49 @@ const AuthLogin = () => {
       return;
     }
 
-    // Here you would call your API to send password reset email
     toast({
       title: "Password Reset Email Sent",
       description: `If an account exists for ${forgotPasswordEmail}, you will receive an email with instructions.`,
       variant: "success",
     });
+
     setShowForgotPassword(false);
   };
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      toast({
-        title: "🎉 Login Successful",
-        description: "Welcome back!",
-        variant: "success",
-      });
+    const runMergeAndRedirect = async () => {
+      if (isAuthenticated && user) {
+        toast({
+          title: "🎉 Login Successful",
+          description: "Welcome back!",
+          variant: "success",
+        });
 
-      if (user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/home");
+        console.log("✅ Login success - running post-login actions");
+
+        // console.log("🚀 Dispatching mergeCarts with guestCart", guestCart.cartItems);
+
+        await dispatch(mergeCarts()); // thunk pulls guestCart from state
+
+        console.log("📦 Fetching merged cart items from server");
+        await dispatch(fetchCartItems());
+
+        if (user.role === "admin") {
+          console.log("👑 Redirecting admin to dashboard");
+          navigate("/admin/dashboard");
+        } else {
+          console.log("🏠 Redirecting user to home");
+          navigate("/home");
+        }
       }
-    }
-  }, [isAuthenticated, user, navigate, toast]);
+    };
+
+    runMergeAndRedirect();
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (error) {
+      console.error("🚫 Login error:", error);
       toast({
         title: "🚫 Login Failed",
         description: error,

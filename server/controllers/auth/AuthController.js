@@ -84,7 +84,7 @@ const loginUser = async (req, res) => {
     res.status(200).json({
       success: true,
       message: "Login successful",
-      token, // Still include in response for flexibility
+      token, 
       user: {
         email: checkUser.email,
         role: checkUser.role,
@@ -117,14 +117,10 @@ const logoutUser = (req, res) => {
 
 // Auth Middleware
 const authMiddleware = async (req, res, next) => {
-  console.log('=== AUTH MIDDLEWARE TRIGGERED ===');
-  
-  // Get token from either cookies or Authorization header
   const token = req.cookies?.token || 
                req.headers?.authorization?.replace('Bearer ', '');
-
+  
   if (!token) {
-    console.error('No token found in request');
     return res.status(401).json({ 
       success: false,
       message: "Authentication required" 
@@ -133,21 +129,28 @@ const authMiddleware = async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
-    console.log('Decoded token:', decoded);
     
+    // Ensure consistent user object structure
     req.user = {
       id: decoded.id, 
       email: decoded.email,
       role: decoded.role
     };
     
+    // Verify user exists in database
+    const userExists = await User.findById(decoded.id);
+    if (!userExists) {
+      throw new Error("User not found");
+    }
+    
+    console.log('Auth Middleware - Token:', token);
+    console.log('Auth Middleware - Decoded:', decoded);
+    console.log('Auth Middleware - req.user:', req.user);
     next();
   } catch (err) {
-    console.error('Token verification failed:', err);
-    
+    console.error('Auth error:', err);
     res.clearCookie('token');
-    
-    res.status(401).json({ 
+    return res.status(401).json({ 
       success: false,
       message: "Invalid or expired token" 
     });

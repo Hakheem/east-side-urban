@@ -137,9 +137,9 @@ const Orders = () => {
                   sortedOrders.map((orderItem) => (
                     <TableRow key={orderItem?._id}>
                       <TableCell className="font-medium">
-                        #{orderItem?.id.slice(-6).toUpperCase()}
+                        {orderItem?._id}
                       </TableCell>
-                      <TableCell>
+                      <TableCell> 
                         {new Date(orderItem?.orderDate).toLocaleDateString()}
                       </TableCell>
                       <TableCell>

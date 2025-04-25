@@ -149,7 +149,7 @@ const Listing = () => {
   }, [productDetails]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-6 md:p-6">
+    <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-4 md:p-6">
       <Filter filters={filters} handleFilter={handleFilter} />
       <div className="bg-background w-full rounded-lg shadow-sm">
         <div className="p-4 border-b flex gap-4 items-center justify-between">
@@ -187,21 +187,46 @@ const Listing = () => {
         </div>
 
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-4 p-4 lg:grid-cols-4">
-          {error && <p className="text-red-500">Error: {error}</p>}
-          {productList.length > 0 ? (
-            productList.map((productItem, index) => (
-              <ShopProductDisplay
-                key={productItem._id || index}
-                product={productItem}
-                handleProductDetails={handleProductDetails}
-                handleAddToCart={handleAddToCart}
-              />
-            ))
-          ) : (
-            <p>Nothing's available for now.</p>
-          )}
-        </div>
+<div className="grid grid-cols-2 gap-4 p-4 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+  {error && <p className="text-red-500 col-span-full">Error: {error}</p>}
+  {productList.length > 0 ? (
+    productList.map((productItem, index) => (
+      <ShopProductDisplay
+        key={productItem._id || index}
+        product={productItem}
+        handleProductDetails={handleProductDetails}
+        handleAddToCart={handleAddToCart}
+      />
+    ))
+  ) : (
+    <div className="col-span-full flex flex-col items-center justify-center py-12 space-y-4 text-center">
+      <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-full">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-gray-400"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        No products found
+      </h3>
+      <p className="text-gray-500 dark:text-gray-400 max-w-md">
+        We couldn't find any products matching your criteria. Try adjusting your filters or check back later.
+      </p>
+    </div>
+  )}
+</div>
       </div>
       <ProductDetails
         open={showProductDetails}
