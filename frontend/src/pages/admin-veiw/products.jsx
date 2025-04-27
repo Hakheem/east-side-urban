@@ -65,18 +65,22 @@ const AdminProducts = () => {
   };
 
   function isFormValid() {
-    // Check all form fields are filled
-    const formFieldsValid = Object.entries(formData).every(([key, value]) => {
-      // Skip image validation for edits
-      if (editedId && key === "image") return true;
-      // For new products, all fields must be filled
-      if (key === "salePrice") return true; // salePrice is optional
-      return value !== "" && value !== null;
+    // Required fields (making brand optional)
+    const requiredFields = ['title', 'description', 'category', 'price', 'totalStock'];
+    
+    // Check all required fields are filled
+    const formFieldsValid = requiredFields.every(key => {
+      const value = formData[key];
+      return value !== "" && value !== null && value !== undefined;
     });
-
-    // Image is required only for new products
-    const imageValid = editedId ? true : uploadedImageUrl !== "";
-
+  
+    // Image validation:
+    // - For new products: must have uploadedImageUrl
+    // - For edits: can keep existing image or upload new one
+    const imageValid = editedId 
+      ? (uploadedImageUrl !== "" || formData.image) 
+      : uploadedImageUrl !== "";
+  
     return formFieldsValid && imageValid;
   }
 
@@ -271,7 +275,7 @@ const AdminProducts = () => {
               Delete
             </Button>
           </div>
-        </DialogContent>
+        </DialogContent> 
       </Dialog>
     </Fragment>
   );

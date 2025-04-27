@@ -1,22 +1,25 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const initialState = { 
+const initialState = {
   isAuthenticated: false,
+  isGuest: true,
   user: null,
   isLoading: true,
   error: null,
-  tokenInMemory: null,
 };
 
-export const registerUser = createAsyncThunk("auth/register", async (formData) => {
-  const response = await axios.post(
-    `${import.meta.env.VITE_URL_API}/api/auth/register`,
-    formData,
-    { withCredentials: true }
-  );
-  return response.data;
-});
+export const registerUser = createAsyncThunk(
+  "auth/register",
+  async (formData) => {
+    const response = await axios.post(
+      `${import.meta.env.VITE_URL_API}/api/auth/register`,
+      formData,
+      { withCredentials: true }
+    );
+    return response.data;
+  }
+);
 
 export const loginUser = createAsyncThunk("auth/login", async (formData) => {
   try {
@@ -28,13 +31,11 @@ export const loginUser = createAsyncThunk("auth/login", async (formData) => {
         headers: { "Content-Type": "application/json" },
       }
     );
-    console.log("✅ Login successful, token:", response.data.token);
     return {
       ...response.data,
       tokenInMemory: response.data.token,
     };
   } catch (error) {
-    console.error("❌ Login failed", error.response?.data);
     return {
       success: false,
       message: error.response?.data?.message || "Login failed",
@@ -58,19 +59,21 @@ export const logoutUser = createAsyncThunk("auth/logout", async () => {
   }
 });
 
-export const checkAuth = createAsyncThunk("auth/checkauth", async (_, { getState }) => {
+// Enhanced checkAuth in authSlice
+export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
   try {
-    const token = getState().auth.tokenInMemory;
     const response = await axios.get(
       `${import.meta.env.VITE_URL_API}/api/auth/check-auth`,
-      {
-        withCredentials: true,
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      }
+      { withCredentials: true }
     );
+
+    if (!response.data.success) {
+      return { success: false, isGuest: true };
+    }
+
     return response.data;
   } catch (error) {
-    return { success: false };
+    return { success: false, isGuest: true };
   }
 });
 
@@ -106,19 +109,17 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload.success) {
-          console.log("✅ Login payload:", action.payload);
           state.user = action.payload.user;
           state.isAuthenticated = true;
-          state.tokenInMemory = action.payload.tokenInMemory;
+          state.isGuest = false;
         } else {
-          console.warn("⚠️ Login unsuccessful:", action.payload.message);
           state.user = null;
           state.isAuthenticated = false;
+          state.isGuest = true;
           state.error = action.payload.message;
         }
       })
       .addCase(loginUser.rejected, (state, action) => {
-        console.error("❌ Login request failed");
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
@@ -133,17 +134,16 @@ const authSlice = createSlice({
       .addCase(checkAuth.fulfilled, (state, action) => {
         state.isLoading = false;
         if (action.payload?.success) {
-          console.log("✅ Auth check success:", action.payload.user);
           state.user = action.payload.user;
           state.isAuthenticated = true;
+          state.isGuest = false;
         } else {
-          console.warn("⚠️ Auth check failed");
           state.isAuthenticated = false;
+          state.isGuest = true;
           state.user = null;
         }
       })
       .addCase(checkAuth.rejected, (state) => {
-        console.warn("⚠️ Auth check rejected");
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
@@ -151,15 +151,16 @@ const authSlice = createSlice({
 
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {
-        console.log("👋 Logged out");
         state.isLoading = false;
         state.user = null;
         state.isAuthenticated = false;
         state.tokenInMemory = null;
+
+        // ✅ Remove token from storage
+        sessionStorage.removeItem("token");
       });
   },
 });
 
 export const { resetAuthState } = authSlice.actions;
 export default authSlice.reducer;
- 

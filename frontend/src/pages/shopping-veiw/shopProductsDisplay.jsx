@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCart, fetchCartItems } from "@/store/shop/cartSlice";
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 
 const ShopProductsDisplay = ({ product, handleProductDetails }) => {
   const dispatch = useDispatch();
   const { cartItems, isLoading } = useSelector((state) => state.shopCart);
-  const { isAuthenticated } = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   const { toast } = useToast();
 
   // Refresh cart items when authentication status changes
@@ -23,19 +23,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
       const existingItem = cartItems.find(item => item.productId === productId);
       const currentQuantity = existingItem?.quantity || 0;
       
-      // For logged-in users, we need to check server-side stock
-      if (isAuthenticated) {
-        if (currentQuantity >= totalStock) {
-          toast({
-            title: "⚠️ Stock Limit Reached",
-            description: `You already have ${currentQuantity} in cart (max ${totalStock})`,
-            variant: "default",
-          });
-          return;
-        }
-      } 
-      // For guests, check local stock
-      else if (currentQuantity >= totalStock) {
+      if (currentQuantity >= totalStock) {
         toast({
           title: "⚠️ Stock Limit Reached",
           description: `You already have ${currentQuantity} in cart (max ${totalStock})`,
@@ -44,9 +32,18 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
         return;
       }
 
+      // Include auth state in the payload
       const result = await dispatch(addToCart({
         productId,
-        quantity: 1
+        quantity: 1,
+        auth: { isAuthenticated, userId: user?.id },
+        details: {
+          title: product.title,
+          price: product.price,
+          salePrice: product.salePrice,
+          image: product.image,
+          stock: product.totalStock
+        }
       }));
 
       // For logged-in users, refresh cart after adding
@@ -73,6 +70,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
   const isInCart = cartItems.some(item => item.productId === product?._id);
   const cartQuantity = cartItems.find(item => item.productId === product?._id)?.quantity || 0;
 
+  
   return (
     <Card className="w-full max-w-sm mx-auto hover:shadow-md transition-shadow">
       <div 
@@ -80,7 +78,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
         className="cursor-pointer"
       >
         <div className="relative">
-          <img
+          <img 
             src={product?.image} 
             alt={product?.title}
             className="w-full h-[180px] sm:h-[200px] md:h-[250px] object-cover rounded-t-lg"

@@ -1,13 +1,20 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-// Load guest cart from localStorage
+// Enhanced loadGuestCart with better error handling and logging
 const loadGuestCart = () => {
   try {
-    const cart = JSON.parse(localStorage.getItem("guestCart")) || [];
+    const serializedCart = localStorage.getItem("guestCart");
+    if (!serializedCart) {
+      console.log('[CART] No guest cart found in localStorage');
+      return [];
+    }
+    
+    const cart = JSON.parse(serializedCart);
+    console.log('[CART] Loaded guest cart from localStorage:', cart);
     return Array.isArray(cart) ? cart : [];
   } catch (error) {
-    console.error("Failed to load guest cart:", error);
+    console.error("[CART] Failed to load guest cart:", error);
     return [];
   }
 };
@@ -16,176 +23,297 @@ const initialState = {
   cartItems: loadGuestCart(),
   isLoading: false,
   error: null,
+  lastUpdated: Date.now(),
 };
 
-// Helper function for API calls
-// In your cartSlice.js, update the makeCartRequest helper:
-const makeCartRequest = async (method, endpoint, data = null) => {
-  const token = getState().auth.tokenInMemory;
-  
-  const config = {
-    method: method.toLowerCase(),
-    url: `${import.meta.env.VITE_URL_API}/api/cart${endpoint}`,
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` })
-    },
-    data
-  };
+const makeCartRequest = async (method, endpoint, data = null, getState) => {
+  const state = getState(); // Get full state first
+  const token = state?.auth?.tokenInMemory; // Safely access token
+  const url = `${import.meta.env.VITE_URL_API}/api/cart${endpoint}`;
+
+  console.log(`[CART] Making ${method.toUpperCase()} request to ${url}`, { 
+    data,
+    hasToken: !!token,
+    timestamp: new Date().toISOString()
+  });
 
   try {
+    const config = {
+      method: method.toLowerCase(),
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` })
+      },
+      withCredentials: true
+    };
+
+    if (data) config.data = data;
+
     const response = await axios(config);
     return response.data;
   } catch (error) {
-    console.error(`Cart API error:`, error);
-    throw error.response?.data?.message || error.message;
+    console.error(`[CART] Request failed:`, error);
+    throw error;
   }
 };
 
-// Thunks
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
-  async ({ productId, quantity, auth, details }, { dispatch, rejectWithValue }) => {
+  async ({ productId, quantity, details }, { getState, dispatch, rejectWithValue }) => {
     try {
-      const isAuthenticated = auth?.isAuthenticated;
+      const state = getState();
+      const isAuthenticated = state?.auth?.isAuthenticated;
 
       if (!isAuthenticated) {
-        // Add to guest cart and save to localStorage
         dispatch(addToGuestCart({ productId, quantity, ...details }));
         return { isGuest: true };
       }
 
-      // Authenticated user - API call
-      await makeCartRequest("post", "/add", { productId, quantity });
-
-      // Re-fetch cart after adding
+      const response = await makeCartRequest(
+        "post", 
+        "/add", 
+        { productId, quantity, ...details },
+        getState
+      );
+      
       await dispatch(fetchCartItems());
-
-      return { productId, quantity };
+      return response;
+      
     } catch (error) {
-      console.error("addToCart error:", error);
-      return rejectWithValue(error);
+      return rejectWithValue(error.message);
     }
   }
 );
-
 
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchCartItems",
   async (_, { getState, rejectWithValue }) => {
-    const { auth } = getState();
-    console.log('fetchCartItems triggered', { auth });
-
     try {
-      if (!auth.isAuthenticated) {
+      const state = getState();
+      const isAuthenticated = state?.auth?.isAuthenticated;
+
+      if (!isAuthenticated) {
         const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
         return { cart: { items: localCart }, isGuest: true };
       }
 
-      const response = await axios.get(
-        `${import.meta.env.VITE_URL_API}/api/cart`,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${auth.token}`,
-          },
-        } 
-      );
-
-      console.log("✅ Authenticated fetch response:", response.data);
-
-      const cart = response.data?.cart || response.data?.data?.cart || [];
-      return { cart };
+      const response = await makeCartRequest("get", "", null, getState);
+      return { cart: response.cart || { items: [] } };
+      
     } catch (error) {
-      console.error("Error fetching cart:", error);
-      if (error.response?.status === 404) {
-        return { cart: { items: [] } };
-      }
-      return rejectWithValue(error.response?.data?.message || "Failed to load cart");
+      return rejectWithValue(error.message);
     }
   }
 );
-
 
 export const updateCartItemsQty = createAsyncThunk(
   "cart/updateItemsQty",
-  async ({ productId, quantity }, { getState, dispatch }) => {
+  async ({ productId, quantity }, { getState, dispatch, rejectWithValue }) => {
     const { auth } = getState();
+    try {
+      console.log('[CART] Updating quantity:', { 
+        productId, 
+        quantity,
+        isAuthenticated: auth.isAuthenticated,
+        timestamp: new Date().toISOString()
+      });
 
-    if (auth.isAuthenticated) {
-      const response = await makeCartRequest("put", "/update", {
+      if (!auth.isAuthenticated) {
+        console.log('[CART] Guest cart quantity update');
+        dispatch(updateGuestCartItem({ productId, quantity }));
+        return { productId, quantity, isGuest: true };
+      }
+
+      const response = await makeCartRequest(
+        "put", 
+        "/update-quantity", 
+        { productId, quantity },
+        getState
+      );
+      
+      console.log('[CART] Quantity update successful');
+      return {
         productId,
         quantity,
+        cart: response.cart || { items: [] }
+      };
+    } catch (error) {
+      console.error('[CART] Update failed:', {
+        error: error.message,
+        productId,
+        quantity,
+        timestamp: new Date().toISOString()
       });
-      return response;
-    } else {
-      dispatch(updateGuestCartItem({ productId, quantity }));
-      return { success: true, isGuest: true };
+      return rejectWithValue(
+        error.response?.data?.message || 
+        error.message || 
+        "Failed to update quantity"
+      );
     }
   }
 );
+
+
 
 export const deleteCartItem = createAsyncThunk(
   "cart/deleteItem",
-  async (productId, { getState, dispatch }) => {
+  async (productId, { getState, dispatch, rejectWithValue }) => {
     const { auth } = getState();
+    
+    try {
+      const productIdStr = String(productId).trim();
 
-    if (auth.isAuthenticated) {
-      await makeCartRequest("delete", `/delete/${productId}`);
-      return { productId };
-    } else {
-      dispatch(removeFromGuestCart(productId));
-      return { productId, isGuest: true };
+      if (!auth.isAuthenticated) {
+        // Handle guest cart deletion
+        console.log('Deleting from guest cart:', productIdStr);
+        dispatch(removeFromGuestCart(productIdStr));
+        return { 
+          productId: productIdStr, 
+          isGuest: true,
+          cart: { items: JSON.parse(localStorage.getItem("guestCart")) || [] }
+        };
+      }
+
+      // Handle authenticated user deletion
+      console.log('Deleting from user cart:', productIdStr);
+      const response = await axios.delete(
+        `${import.meta.env.VITE_URL_API}/api/cart/${encodeURIComponent(productIdStr)}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.tokenInMemory}`
+          },
+          withCredentials: true
+        }
+      );
+
+      return {
+        productId: productIdStr,
+        cart: response.data.cart || { items: [] }
+      };
+      
+    } catch (error) {
+      console.error('Delete failed:', {
+        productId,
+        isAuthenticated: auth.isAuthenticated,
+        error: error.response?.data || error.message
+      });
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to delete item"
+      );
     }
   }
 );
+
 
 export const mergeCarts = createAsyncThunk(
   "cart/mergeCarts",
   async (_, { getState, dispatch, rejectWithValue }) => {
-    const { auth, shopCart } = getState();
-
-    if (!auth.isAuthenticated || shopCart.cartItems.length === 0) {
-      return;
-    }
-
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_URL_API}/api/cart/merge`,
-        { guestCartItems: shopCart.cartItems },
-        { withCredentials: true }
+      const { auth, cart } = getState();
+      
+      console.log('[CART] Merge initiated', {
+        isAuthenticated: auth.isAuthenticated,
+        guestItemsCount: cart.cartItems.filter(item => !item.userId).length,
+        timestamp: new Date().toISOString()
+      });
+
+      if (!auth.isAuthenticated) {
+        console.log('[CART] No merge needed - not authenticated');
+        return { 
+          success: false, 
+          message: "Not authenticated",
+          cart: { items: cart.cartItems }
+        };
+      }
+
+      // Get current guest cart items
+      const guestCartItems = cart.cartItems.filter(item => !item.userId);
+      
+      if (guestCartItems.length === 0) {
+        console.log('[CART] No guest items to merge');
+        return { 
+          success: true, 
+          message: "No guest items to merge",
+          cart: { items: cart.cartItems }
+        };
+      }
+
+      console.log('[CART] Attempting to merge guest items');
+      const response = await makeCartRequest(
+        "post", 
+        "/merge", 
+        { guestCartItems },
+        getState
       );
+
+      if (!response?.cart) {
+        throw new Error("Merge response did not include cart data");
+      }
+
+      // Clear guest cart only after successful merge
       dispatch(clearGuestCart());
-      return response.data;
+      
+      console.log('[CART] Merge successful');
+      return {
+        ...response,
+        success: true,
+        cart: response.cart || { items: cart.cartItems }
+      };
     } catch (error) {
-      console.error("Merge error:", error);
-      return rejectWithValue(error.response?.data?.message || "Merge failed");
+      console.error('[CART] Merge failed:', error);
+      const currentItems = getState().cart.cartItems;
+      return rejectWithValue({
+        message: error.toString(),
+        cart: { items: currentItems } // Return current items
+      });
     }
   }
 );
 
-// Slice
+
+
 const cartSlice = createSlice({
   name: "cart",
   initialState,
   reducers: {
     addToGuestCart: (state, action) => {
       const { productId, quantity, ...details } = action.payload;
+      console.log('[CART] Adding to guest cart:', { productId, quantity });
+      
       const existingItem = state.cartItems.find((item) => item.productId === productId);
       if (existingItem) {
         existingItem.quantity += quantity;
       } else {
         state.cartItems.push({ productId, quantity, ...details });
       }
+      
       localStorage.setItem("guestCart", JSON.stringify(state.cartItems));
+      console.log('[CART] Saved guest cart to localStorage');
     },
     removeFromGuestCart: (state, action) => {
-      state.cartItems = state.cartItems.filter((item) => item.productId !== action.payload);
-      localStorage.setItem("guestCart", JSON.stringify(state.cartItems));
+      const productId = action.payload;
+      console.log('[CART] Removing from guest cart:', productId);
+      
+      // Create a new array without the deleted item
+      const newCartItems = state.cartItems.filter(
+        (item) => item.productId !== productId
+      );
+      
+      // Update state and localStorage
+      state.cartItems = newCartItems;
+      localStorage.setItem("guestCart", JSON.stringify(newCartItems));
+      
+      console.log('[CART] Updated guest cart after removal:', {
+        removedItem: productId,
+        remainingItems: newCartItems.length
+      });
     },
     updateGuestCartItem: (state, action) => {
       const { productId, quantity } = action.payload;
+      console.log('[CART] Updating guest cart item:', { productId, quantity });
+      
       const item = state.cartItems.find((item) => item.productId === productId);
       if (item) {
         item.quantity = quantity;
@@ -193,57 +321,83 @@ const cartSlice = createSlice({
       }
     },
     clearGuestCart: (state) => {
-      state.cartItems = [];
+      state.cartItems = state.cartItems.filter(item => item.userId); 
       localStorage.removeItem("guestCart");
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(addToCart.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
-      .addCase(addToCart.fulfilled, (state, action) => {
-        state.isLoading = false;
-      })
-      .addCase(addToCart.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message;
-      })
-      .addCase(fetchCartItems.pending, (state) => {
-        state.isLoading = true;
-        state.error = null;
-      })
       .addCase(fetchCartItems.fulfilled, (state, action) => {
         state.isLoading = false;
         if (!action.payload.isGuest) {
+          console.log('[CART] Updating state with server cart:', action.payload.cart?.items);
           state.cartItems = action.payload.cart?.items || [];
         }
-      })
-      .addCase(fetchCartItems.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(updateCartItemsQty.fulfilled, (state, action) => {
-        if (!action.payload.isGuest) {
-          const { productId, quantity } = action.meta.arg;
-          const item = state.cartItems.find((item) => item.productId === productId);
-          if (item) item.quantity = quantity;
-        }
-      })
-      .addCase(deleteCartItem.fulfilled, (state, action) => {
-        if (!action.payload.isGuest) {
-          state.cartItems = state.cartItems.filter(
-            (item) => item.productId !== action.payload.productId
-          );
-        }
+        state.lastUpdated = Date.now();
       })
       .addCase(mergeCarts.fulfilled, (state, action) => {
-        if (action.payload?.success) {
-          state.cartItems = action.payload.cart?.items || [];
+        state.isLoading = false;
+        state.error = null;
+        if (action.payload.cart?.items) {
+          console.log('[CART] Updating state with merged cart');
+          state.cartItems = action.payload.cart.items;
         }
-      });
-  },
+        state.lastUpdated = Date.now();
+      })
+      .addCase(mergeCarts.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload?.message || "Merge partially failed";
+        if (action.payload?.cart?.items) {
+          console.log('[CART] Merge failed, keeping existing items');
+          state.cartItems = action.payload.cart.items;
+        }
+        state.lastUpdated = Date.now();
+      })
+      .addCase(updateCartItemsQty.fulfilled, (state, action) => {
+        state.isLoading = false;
+        if (action.payload.isGuest) return;
+        
+        if (action.payload.cart?.items) {
+          state.cartItems = action.payload.cart.items;
+        } else {
+          const { productId, quantity } = action.payload;
+          const item = state.cartItems.find(item => item.productId === productId);
+          if (item) {
+            item.quantity = quantity;
+          }
+        }
+        state.lastUpdated = Date.now();
+      })
+      .addCase(deleteCartItem.fulfilled, (state, action) => {
+      if (action.payload.isGuest) return;
+      
+      if (action.payload.cart?.items) {
+        state.cartItems = action.payload.cart.items;
+      } else {
+        state.cartItems = state.cartItems.filter(
+          item => item.productId !== action.payload.productId
+        );
+      }
+    })
+      .addMatcher(
+        (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
+        (state) => {
+          state.isLoading = true;
+          state.error = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.startsWith('cart/') && action.type.endsWith('/rejected'),
+        (state, action) => {
+          state.isLoading = false;
+          state.error = typeof action.payload === 'string' 
+            ? action.payload 
+            : action.payload?.message || "An error occurred";
+          console.error('[CART] Error:', state.error);
+          state.lastUpdated = Date.now();
+        }
+      );
+  }
 });
 
 export const {

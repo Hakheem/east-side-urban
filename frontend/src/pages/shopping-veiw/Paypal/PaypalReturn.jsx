@@ -31,7 +31,7 @@ const PaypalReturn = () => {
       }
     };
 
-    handlePaymentCapture();
+    handlePaymentCapture(); 
   }, [dispatch, location.search, navigate]);
 
   return (

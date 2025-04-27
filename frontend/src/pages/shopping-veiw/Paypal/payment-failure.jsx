@@ -10,7 +10,7 @@ const PaymentFailure = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-rose-50 p-4"
+      className="flex items-center justify-center h-[95vh] bg-gradient-to-br from-red-50 to-rose-50 p-4"
     >
       <motion.div
         initial={{ y: -20, scale: 0.98 }}
@@ -56,11 +56,11 @@ const PaymentFailure = () => {
                 <CircleX className="w-20 h-20" strokeWidth={1.5} />
               </motion.div>
               
-              <p className="text-gray-700 mb-6 text-lg">
+              <p className="text-gray-700 mb-4 text-lg">
                 We couldn't process your payment. Please try again.
               </p>
               
-              <div className="w-full bg-red-50 rounded-lg p-4 mb-6 border border-red-100">
+              <div className="w-full bg-red-50 rounded-lg p-4  border border-red-100">
                 <div className="flex items-start gap-3 text-red-800">
                   <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                   <p className="text-left">

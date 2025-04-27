@@ -48,6 +48,14 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
         addToCart({
           productId: currentId,
           quantity: quantity,
+          auth: { isAuthenticated, userId: user?.id },
+          details: {
+            title: productDetails.title,
+            price: productDetails.price,
+            salePrice: productDetails.salePrice,
+            image: productDetails.image,
+            stock: productDetails.totalStock
+          }
         })
       );
 
@@ -332,7 +340,7 @@ const ProductDetails = ({ open, setOpen, productDetails }) => {
                   multiline
                 />
                 <Button
-                  className="w-full sm:w-auto"
+                  className="w-full sm:w-auto" 
                   disabled={reviewMsg.trim() === "" || rating === 0}
                   onClick={handleAddReview}
                 >

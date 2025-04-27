@@ -1,4 +1,3 @@
-// AdminOrderDetails.jsx
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Label } from "@/components/ui/label";
@@ -17,15 +16,42 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import { Loader2, Package, Truck, CheckCircle, XCircle, Clock, MapPin, CreditCard, ShoppingCart } from "lucide-react";
+
+const statusConfig = {
+  pending: {
+    color: "bg-amber-100 text-amber-800",
+    icon: <Clock className="h-4 w-4" />,
+  },
+  processing: {
+    color: "bg-blue-100 text-blue-800",
+    icon: <Package className="h-4 w-4" />,
+  },
+  shipped: {
+    color: "bg-indigo-100 text-indigo-800",
+    icon: <Truck className="h-4 w-4" />,
+  },
+  outForDelivery: {
+    color: "bg-purple-100 text-purple-800",
+    icon: <Truck className="h-4 w-4" />,
+  },
+  delivered: {
+    color: "bg-green-100 text-green-800",
+    icon: <CheckCircle className="h-4 w-4" />,
+  },
+  rejected: {
+    color: "bg-red-100 text-red-800",
+    icon: <XCircle className="h-4 w-4" />,
+  },
+};
 
 const statusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "processing", label: "Processing" },
-  { value: "shipped", label: "Shipped" },
-  { value: "outForDelivery", label: "Out for Delivery" },
-  { value: "delivered", label: "Delivered" },
-  { value: "rejected", label: "Rejected" },
+  { value: "pending", label: "Pending", icon: <Clock className="h-4 w-4" /> },
+  { value: "processing", label: "Processing", icon: <Package className="h-4 w-4" /> },
+  { value: "shipped", label: "Shipped", icon: <Truck className="h-4 w-4" /> },
+  { value: "outForDelivery", label: "Out for Delivery", icon: <Truck className="h-4 w-4" /> },
+  { value: "delivered", label: "Delivered", icon: <CheckCircle className="h-4 w-4" /> },
+  { value: "rejected", label: "Rejected", icon: <XCircle className="h-4 w-4" /> },
 ];
 
 const formatAmount = (amount, method = "") => {
@@ -85,7 +111,10 @@ const AdminOrderDetails = ({ orderDetails }) => {
   return (
     <div className="p-6 space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-bold">Order #{orderDetails?._id}</h2>
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <ShoppingCart className="h-5 w-5" />
+          Order #{orderDetails?._id}
+        </h2>
         
         {/* Order Summary */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
@@ -98,12 +127,8 @@ const AdminOrderDetails = ({ orderDetails }) => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Status:</span>
-              <Badge variant={
-                formData.orderStatus === "delivered" ? "success" :
-                formData.orderStatus === "shipped" ? "info" :
-                formData.orderStatus === "rejected" ? "destructive" :
-                "default"
-              }>
+              <Badge className={`${statusConfig[formData.orderStatus]?.color || 'bg-gray-100 text-gray-800'} flex items-center gap-1`}>
+                {statusConfig[formData.orderStatus]?.icon}
                 {formData.orderStatus}
               </Badge>
             </div>
@@ -117,7 +142,8 @@ const AdminOrderDetails = ({ orderDetails }) => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Payment Method:</span>
-              <span className="capitalize">
+              <span className="capitalize flex items-center gap-1">
+                <CreditCard className="h-4 w-4" />
                 {orderDetails?.paymentMethod}
               </span>
             </div>
@@ -126,7 +152,10 @@ const AdminOrderDetails = ({ orderDetails }) => {
 
         {/* Products */}
         <div className="space-y-4">
-          <h3 className="font-semibold">Products</h3>
+          <h3 className="font-semibold flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Products
+          </h3>
           <div className="border rounded-lg overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -160,7 +189,10 @@ const AdminOrderDetails = ({ orderDetails }) => {
 
         {/* Shipping Info */}
         <div className="space-y-4">
-          <h3 className="font-semibold">Shipping Information</h3>
+          <h3 className="font-semibold flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Shipping Information
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium">{user?.userName}</p>
@@ -192,20 +224,24 @@ const AdminOrderDetails = ({ orderDetails }) => {
               </SelectTrigger>
               <SelectContent>
                 {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} className="flex items-center gap-2">
+                    {option.icon}
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button type="submit" disabled={isUpdating}>
+            <Button type="submit" disabled={isUpdating} className="flex items-center gap-1">
               {isUpdating ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Updating...
                 </>
               ) : (
-                "Update Status"
+                <>
+                  <CheckCircle className="h-4 w-4" />
+                  Update Status
+                </>
               )}
             </Button>
           </div>

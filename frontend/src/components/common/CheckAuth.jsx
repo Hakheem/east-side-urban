@@ -1,45 +1,36 @@
 import { Navigate, useLocation } from "react-router-dom";
+import { useSelector } from "react-redux";
 
-const CheckAuth = ({ isAuthenticated, user, children }) => {
+const CheckAuth = ({ children, roles = [], guestAllowed = false }) => {
   const location = useLocation();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-  console.log("CheckAuth location:", location.pathname);
-  console.log("isAuthenticated:", isAuthenticated);
-  console.log("user:", user);
-
+  // guest access
   if (!isAuthenticated) {
-    console.log("Redirecting guest to login...");
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return guestAllowed ? (
+      children
+    ) : (
+      <Navigate to="/auth/login" state={{ from: location }} replace />
+    );
   }
 
-  if (user?.role === "admin" && !location.pathname.startsWith("/admin")) {
-    console.log("Admin detected. Redirecting to /admin/dashboard...");
-    return <Navigate to="/admin/dashboard" replace />;
+  if (isAuthenticated && location.pathname.startsWith("/auth")) {
+    return (
+      <Navigate
+        to={user?.role === "admin" ? "/admin/dashboard" : "/home"}
+        replace
+      />
+    );
   }
 
   if (location.pathname.startsWith("/admin") && user?.role !== "admin") {
-    console.log(
-      "Non-admin trying to access admin route. Redirecting to /unauthorised..."
-    );
     return <Navigate to="/unauthorised" replace />;
   }
 
-  if (
-    isAuthenticated &&
-    (location.pathname.includes("/login") ||
-      location.pathname.includes("/register"))
-  ) {
-    console.log(
-      "Authenticated user trying to access login/register. Redirecting..."
-    );
-    return user?.role === "admin" ? (
-      <Navigate to="/admin/dashboard" replace />
-    ) : (
-      <Navigate to="/home" replace />
-    );
+  if (roles.length > 0 && !roles.includes(user?.role)) {
+    return <Navigate to="/unauthorised" replace />;
   }
 
-  console.log("Authorized. Rendering children.");
   return children;
 };
 

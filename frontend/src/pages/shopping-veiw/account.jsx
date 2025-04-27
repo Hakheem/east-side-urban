@@ -1,19 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Package,
   MapPin,
-  User,
   Clock,
-  Truck,
   CheckCircle,
   XCircle,
+  RefreshCw,
 } from "lucide-react";
 import images from "@/assets/assets";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Orders from "./orders";
 import Address from "./address";
 import DissolvingBanner from "@/components/common/DissolvingBanner";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { getAllOrdersByUserId } from "@/store/shop/shopOrdersSlice"; 
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 const Account = () => {
   const bannerImages = [
@@ -21,8 +23,34 @@ const Account = () => {
     images.accesoriesHeader,
     images.cover_photo,
   ];
-  const { orderList } = useSelector((state) => state.shopOrder);
+  const dispatch = useDispatch();
+  const { toast } = useToast();
+  const { orderList, isLoading } = useSelector((state) => state.shopOrder);
   const { addresses } = useSelector((state) => state.addresses);
+  const { user } = useSelector((state) => state.auth);
+
+  const handleRefreshOrders = async () => {
+    try {
+      await dispatch(getAllOrdersByUserId(user?.id)).unwrap();
+      toast({
+        title: "Orders Updated",
+        description: "Your order list has been refreshed",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: error.message || "Could not update orders",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(getAllOrdersByUserId(user.id));
+    }
+  }, [dispatch, user?.id]);
 
   const orderStats = {
     total: orderList?.length || 0,
@@ -138,6 +166,25 @@ const Account = () => {
                   </span>
                 )}
               </TabsTrigger>
+              <Button
+  variant="ghost"
+  size="sm"
+  onClick={handleRefreshOrders}
+  disabled={isLoading}
+  className="ml-auto flex items-center gap-2"
+>
+  {isLoading ? (
+    <>
+      <RefreshCw className="h-4 w-4 animate-spin" />
+      <span>Refreshing...</span>
+    </>
+  ) : (
+    <>
+      <RefreshCw className="h-4 w-4" />
+      <span>Refresh</span>
+    </>
+  )}
+</Button>
             </TabsList>
 
             <div className="p-6">

@@ -10,7 +10,7 @@ const AdminProductDisplay = ({
   setCreateProducts,
   setEditedId,
   handleDelete,
-}) => {
+}) => { 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

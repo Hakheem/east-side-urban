@@ -11,7 +11,7 @@ const PaymentSuccess = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex items-center justify-center h-screen bg-gradient-to-br from-green-50 to-emerald-50 p-4"
+      className="flex items-center justify-center h-[95vh] bg-gradient-to-br from-green-50 to-emerald-50 p-4"
     >
       <motion.div
         initial={{ y: -20, scale: 0.98 }}

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { checkAuth } from "./store/auth/auth";
 import { Toaster } from "@/components/ui/toaster";
+import { AnimatePresence } from "framer-motion";
 
 // Layouts
 import AuthLayout from "./components/auth/layout";
@@ -33,12 +34,13 @@ import CheckAuth from "./components/common/CheckAuth";
 import CustomLoader from "./components/ui/loader";
 
 function App() {
-  const { user, isAuthenticated, isLoading } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
+  const { user, isAuthenticated, isLoading } = useSelector(
+    (state) => state.auth
+  );
 
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
-    dispatch(checkAuth(token));
+    dispatch(checkAuth());
   }, [dispatch]);
 
   if (isLoading) {
@@ -51,55 +53,77 @@ function App() {
 
   return (
     <div className="flex flex-col">
-      <Routes>
+      <AnimatePresence mode="wait">
+        <Routes>
+          {/* Public Shop Routes */}
+          <Route path="/" element={<ShopLayout />}>
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="home" element={<Home />} />
+            <Route path="listing" element={<Listing />} />
+            <Route path="paypal-return" element={<PaypalReturn />} />
+            <Route path="payment-success" element={<PaymentSuccess />} />
+            <Route path="payment-failure" element={<PaymentFailure />} />
+            <Route path="search" element={<SearchPage />} />
 
-        {/* Public Shop Routes */}
-        <Route path="/" element={<ShopLayout />}>
-          <Route index element={<Navigate to="home" replace />} />
-          <Route path="home" element={<Home />} />
-          <Route path="listing" element={<Listing />} />
-          <Route path="paypal-return" element={<PaypalReturn />} />
-          <Route path="payment-success" element={<PaymentSuccess />} />
-          <Route path="payment-failure" element={<PaymentFailure />} />
-          <Route path="search" element={<SearchPage />} />
+            {/* Protected shop routes */}
+            <Route
+              path="checkout"
+              element={
+                <CheckAuth>
+                  <Checkout />
+                </CheckAuth>
+              }
+            />
+            <Route
+              path="account"
+              element={
+                <CheckAuth>
+                  <Account />
+                </CheckAuth>
+              }
+            />
+          </Route>
 
-          {/* Protected shop routes */}
-          <Route path="checkout" element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <Checkout />
-            </CheckAuth>
-          } />
-          <Route path="account" element={ 
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <Account />
-            </CheckAuth>
-          } />
-        </Route>
+          {/* Auth Routes - Only accessible to guests */}
+          <Route path="/auth" element={<AuthLayout />}>
+            <Route
+              path="login"
+              element={
+                <CheckAuth guestAllowed>
+                  <Login />
+                </CheckAuth>
+              }
+            />
+            <Route
+              path="register"
+              element={
+                <CheckAuth guestAllowed>
+                  <Register />
+                </CheckAuth>
+              }
+            />
+          </Route>
 
-        <Route path="/auth" element={<AuthLayout />}>
-          <Route path="login" element={<Login />} />
-          <Route path="register" element={<Register />} />
-        </Route>
+          {/* Admin Routes */}
+          <Route
+            path="/admin"
+            element={
+              <CheckAuth roles={["admin"]}>
+                <AdminLayout />
+              </CheckAuth>
+            }
+          >
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="features" element={<AdminFeatures />} />
+          </Route>
 
-        {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <CheckAuth isAuthenticated={isAuthenticated} user={user}>
-              <AdminLayout />
-            </CheckAuth>
-          }
-        >
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="features" element={<AdminFeatures />} />
-        </Route>
-
-        {/* Misc Routes */}
-        <Route path="*" element={<NotFound />} />
-        <Route path="unauthorised" element={<Unauthorised />} />
-      </Routes>
+          {/* Misc Routes */}
+          <Route path="*" element={<NotFound />} />
+          <Route path="unauthorised" element={<Unauthorised />} />
+        </Routes>
+      </AnimatePresence>
       <Toaster />
     </div>
   );

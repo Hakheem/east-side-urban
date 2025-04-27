@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IoMdMenu } from "react-icons/io";
 import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { CiSearch } from "react-icons/ci";
 import { MdLogout } from "react-icons/md";
 import { Button } from "../ui/button";
+import { motion } from "framer-motion";
+import { LogOut, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 import {
   DropdownMenu,
@@ -17,7 +19,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSelector, useDispatch } from "react-redux";
 import { shopHeaderMenuItems } from "@/config/config";
-import { logoutUser } from "@/store/auth/auth";
+import { logoutUser, resetAuthState } from "@/store/auth/auth";
 import { fetchCartItems } from "@/store/shop/cartSlice";
 import CartWrapper from "./cartWrapper";
 import { Label } from "../ui/label";
@@ -74,7 +76,9 @@ function MobileAuthSection({ closeSheet, navigate }) {
             </Avatar>
             <div>
               <p className="text-sm font-medium">My Account</p>
-              <p className="text-xs text-gray-500">Logged in as {user?.userName}</p>
+              <p className="text-xs text-gray-500">
+                Logged in as {user?.userName}
+              </p>
             </div>
           </div>
           <div
@@ -199,7 +203,7 @@ function RightContent() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.id) {
       dispatch(fetchCartItems(user?.id));
     }
@@ -253,7 +257,7 @@ function RightContent() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Avatar className="h-9 w-9 cursor-pointer">
-                <AvatarFallback className="bg-black text-white">
+                <AvatarFallback className="bg-black text-white font-semibold ">
                   {user?.userName?.[0]?.toUpperCase() || "U"}
                 </AvatarFallback>
               </Avatar>
@@ -279,33 +283,58 @@ function RightContent() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Logout Confirmation */}
+          {/* logout overlay */}
           {showLogoutOverlay && (
-            <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center z-50">
-              <div className="bg-white p-6 rounded-lg w-1/4 h-[23%]">
-                <h3 className="text-lg font-semibold">
-                  Are you sure you want to log out?
-                </h3>
-                <div className="flex justify-between mt-4">
-                  <Button
-                    className="px-8 h-12 bg-gray-300"
-                    variant="outline"
-                    onClick={() => setShowLogoutOverlay(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    className="px-8 h-12"
-                    onClick={() => {
-                      handleLogout();
-                      setShowLogoutOverlay(false);
-                    }}
-                  >
-                    Log Out
-                  </Button>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.95, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border dark:border-gray-700"
+              >
+                <div className="p-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                    <LogOut className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  </div>
+
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                    Confirm Logout
+                  </h3>
+
+                  <p className="text-gray-500 dark:text-gray-400 mb-6">
+                    Are you sure you want to sign out? You'll need to log in
+                    again to access your account.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowLogoutOverlay(false)}
+                      className="flex-1 h-12 gap-2"
+                    >
+                      <X className="h-4 w-4" />
+                      Cancel
+                    </Button>
+
+                    <Button
+                      variant="destructive"
+                      onClick={() => {
+                        handleLogout();
+                        setShowLogoutOverlay(false);
+                      }}
+                      className="flex-1 h-12 gap-2"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log Out
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
         </>
       ) : (

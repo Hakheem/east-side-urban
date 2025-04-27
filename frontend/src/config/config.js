@@ -9,8 +9,8 @@ export const registerFormControl = [
       required: true,
       minLength: 3,
       pattern: /^[a-zA-Z_]+$/,
-      message: "Username must be at least 3 letters (no numbers allowed)"
-    }
+      message: "Username must be at least 3 letters (no numbers allowed)",
+    },
   },
   {
     name: "email",
@@ -21,8 +21,8 @@ export const registerFormControl = [
     validation: {
       required: true,
       pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: "Please enter a valid email address"
-    }
+      message: "Please enter a valid email address",
+    },
   },
   {
     name: "password",
@@ -33,9 +33,11 @@ export const registerFormControl = [
     validation: {
       required: true,
       minLength: 6,
-      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
-      message: "Password must contain at least 6 characters, including uppercase, lowercase, number, and special character"
-    }
+      pattern:
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/,
+      message:
+        "Password must contain at least 6 characters, including uppercase, lowercase, number, and special character",
+    },
   },
 ];
 
@@ -49,8 +51,8 @@ export const loginFormControl = [
     validation: {
       required: true,
       pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: "Please enter a valid email address"
-    }
+      message: "Please enter a valid email address",
+    },
   },
   {
     name: "password",
@@ -60,11 +62,10 @@ export const loginFormControl = [
     type: "password",
     validation: {
       required: true,
-      message: "Please enter your password"
-    }
+      message: "Please enter your password",
+    },
   },
 ];
-
 
 export const addProductsFormElements = [
   {
@@ -93,7 +94,7 @@ export const addProductsFormElements = [
     ],
   },
   {
-    label: "Brand",
+    label: "Brand (optional)",
     name: "brand",
     componentType: "select",
     options: [
@@ -166,90 +167,89 @@ export const shopHeaderMenuItems = [
     label: "Footwear",
     path: "/listing",
   },
- 
 ];
 
 export const filterOptions = {
-    category: [
-        {id: 'men', label: 'Men'},
-        {id: 'women', label: 'Women'},
-        {id: 'kids', label: 'Kids'},
-        {id: 'accessories', label: 'Accessories'},
-        {id: 'footwear', label: 'Footwear'},
-    ],
-    brand: [
-        {id: 'nike', label: 'Nike'},
-        {id: 'puma', label: 'Puma'},
-        {id: 'adidas', label: 'Adidas'},
-        {id: 'converse', label: 'Converse'},
-        {id: 'timberland', label: 'Timberland'},
-        {id: 'new balance', label: 'New balance'},
-        {id: 'vans', label: 'Vans'},
-        {id: 'formal', label: 'Formal'},
-    ],
-}
+  category: [
+    { id: "men", label: "Men" },
+    { id: "women", label: "Women" },
+    { id: "kids", label: "Kids" },
+    { id: "accessories", label: "Accessories" },
+    { id: "footwear", label: "Footwear" },
+  ],
+  brand: [
+    { id: "nike", label: "Nike" },
+    { id: "puma", label: "Puma" },
+    { id: "adidas", label: "Adidas" },
+    { id: "converse", label: "Converse" },
+    { id: "timberland", label: "Timberland" },
+    { id: "new balance", label: "New balance" },
+    { id: "vans", label: "Vans" },
+    { id: "formal", label: "Formal" },
+  ],
+};
 
 export const sortOptions = [
-    { id: 'price-lowtohigh', label: 'Price: Low to high' },
-    { id: 'price-hightolow', label: 'Price: High to low' },
-    { id: 'title-atoz', label: 'Title: A to Z' },
-    { id: 'title-ztoa', label: 'Title: Z to A' },
+  { id: "price-lowtohigh", label: "Price: Low to high" },
+  { id: "price-hightolow", label: "Price: High to low" },
+  { id: "title-atoz", label: "Title: A to Z" },
+  { id: "title-ztoa", label: "Title: Z to A" },
 ];
 
 export const addressFormControls = [
   {
-    label: 'Address',
-    name: 'address',
-    componentType: 'input',
-    type: 'text',
-    placeholder: 'Enter your address',
+    label: "Address",
+    name: "address",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your address",
     validation: {
       required: true,
-      message: 'Address is required'
-    }
+      message: "Address is required",
+    },
   },
   {
-    label: 'City',
-    name: 'city',
-    componentType: 'input',
-    type: 'text',
-    placeholder: 'Enter your city',
+    label: "City",
+    name: "city",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your city",
     validation: {
       required: true,
-      message: 'City is required'
-    }
+      message: "City is required",
+    },
   },
-  { 
-    label: 'Zipcode',
-    name: 'zipcode',
-    componentType: 'input',
-    type: 'text',
-    placeholder: 'Enter your Zipcode',
+  {
+    label: "Zipcode",
+    name: "zipcode",
+    componentType: "input",
+    type: "text",
+    placeholder: "Enter your Zipcode",
     validation: {
       required: true,
       pattern: /^\d{5}(?:[-\s]\d{4})?$/,
-      message: 'Please enter a valid zipcode'
-    }
+      message: "Please enter a valid zipcode",
+    },
   },
   {
-    label: 'Phone',
-    name: 'phone',
-    componentType: 'input',
-    type: 'tel',
-    placeholder: 'Enter your Phone',
+    label: "Phone",
+    name: "phone",
+    componentType: "input",
+    type: "tel",
+    placeholder: "Enter your Phone",
     validation: {
       required: true,
       pattern: /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/,
-      message: 'Please enter a valid phone number'
-    }
+      message: "Please enter a valid phone number",
+    },
   },
   {
-    label: 'Notes',
-    name: 'notes',
-    componentType: 'textarea',
-    placeholder: 'Enter any special instructions or notes',
+    label: "Notes",
+    name: "notes",
+    componentType: "textarea",
+    placeholder: "Enter any special instructions or notes",
     validation: {
-      required: false
-    }
-  }
+      required: false,
+    },
+  },
 ];

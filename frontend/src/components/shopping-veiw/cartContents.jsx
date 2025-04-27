@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "../ui/button";
 import { Minus, Plus, Trash } from "lucide-react";
 import { useDispatch } from "react-redux";
@@ -8,107 +8,125 @@ import { deleteCartItem, updateCartItemsQty } from "@/store/shop/cartSlice";
 const CartContents = ({ cartItem }) => {
   const dispatch = useDispatch();
   const { toast } = useToast();
+  const [quantity, setQuantity] = useState(cartItem.quantity);
 
-  console.log("🧾 Rendering CartContents:", cartItem);
+  const displayPrice = cartItem.salePrice > 0 ? cartItem.salePrice : cartItem.price;
+  const itemTotal = (displayPrice * quantity).toFixed(2);
 
-  const currentQty = cartItem.quantity || 0;
-  const availableStock = Number(cartItem?.stock || 0);
-  const displayPrice =
-    cartItem?.salePrice && cartItem.salePrice > 0
-      ? cartItem.salePrice
-      : cartItem.price;
-  const totalPrice = (displayPrice * currentQty).toFixed(2);
-
-  const handleDeleteCartItem = async () => {
-    try {
-      await dispatch(deleteCartItem(cartItem.productId)).unwrap();
-      toast({
-        title: "🗑️ Removed",
-        description: `${cartItem.title} removed from cart`,
-        variant: "success",
-      });
-    } catch (error) {
-      toast({
-        title: "❌ Error",
-        description: error.message || "Failed to remove item",
-        variant: "destructive",
-      });
+  const handleUpdate = async (newQuantity) => {
+    if (newQuantity < 1) {
+      setQuantity(1);
+      return;
     }
-  };
 
-  const handleUpdateQuantity = async (type) => {
+    if (newQuantity > (cartItem.totalStock || Infinity)) {
+      toast({
+        title: "Stock Limit",
+        description: `Only ${cartItem.totalStock} available`,
+        variant: "info",
+      });
+      return;
+    }
+
+    setQuantity(newQuantity);
     try {
-      if (type === "plus" && currentQty >= availableStock) {
-        toast({
-          title: "⚠️ Stock limit reached ",
-          description: `Only ${availableStock} available in stock`,
-          variant: "info",
-        });
-        return;
-      }
-
-      if (type === "minus" && currentQty <= 1) {
-        toast({
-          title: "⚠️ Minimum quantity",
-          description: "Quantity can't be less than 1",
-          variant: "info",
-        });
-        return;
-      }
-
-      const newQty = type === "plus" ? currentQty + 1 : currentQty - 1;
       await dispatch(
         updateCartItemsQty({
           productId: cartItem.productId,
-          quantity: newQty,
-        }) 
+          quantity: newQuantity,
+        })
       ).unwrap();
     } catch (error) {
+      setQuantity(cartItem.quantity);
       toast({
-        title: "❌ Error",
-        description: error.message || "Failed to update quantity",
+        title: "Update Failed",
+        description: error.toString(),
         variant: "destructive",
       });
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      // Get the raw product ID in the most reliable way
+      const productId = cartItem.productId?._id 
+        ? String(cartItem.productId._id).trim()
+        : String(cartItem.productId).trim();
+  
+      const result = await dispatch(deleteCartItem(productId));
+      
+      if (result.error) {
+        throw result.error;
+      }
+  
+      toast({
+        title: "Removed",
+        description: `${cartItem.title} was removed from cart`,
+        variant: "success",
+      });
+    } catch (error) {
+      console.error("Delete failed:", {
+        error: error.message,
+        cartItem,
+        stack: error.stack
+      });
+      toast({
+        title: "Error",
+        description: error.message || "Couldn't remove item",
+        variant: "destructive",
+      });
+    }
+  };
+
+
   return (
-    <div className="flex items-center space-x-4">
+    <div className="flex p-2 gap-3">
       <img
-        src={cartItem?.image || ""}
-        alt={cartItem?.title || "Product"}
-        className="object-cover h-20 w-20 rounded"
+        src={cartItem.image || "/default-product.jpg"}
+        alt={cartItem.title}
+        className="w-16 h-16 object-cover rounded mr-2"
+        onError={(e) => (e.target.src = "/default-product.jpg")}
       />
 
-      <div className="flex-1">
-        <h3 className="font-extrabold">{cartItem.title}</h3>
-        <div className="flex mt-1 items-center gap-2">
+      <div className="flex-1 flex flex-col justify-between">
+        <div className="flex justify-between items-center">
+          <h3 className="font-medium text-sm text-muted-foreground">
+            {cartItem.title}
+          </h3>
+          <p className="font-semibold text-md">Ksh.{itemTotal}</p>
+        </div>
+
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex items-center">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleUpdate(quantity - 1)}
+              disabled={quantity <= 1}
+            >
+              <Minus className="h-3 w-3" />
+            </Button>
+            <span className="w-8 text-center">{quantity}</span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleUpdate(quantity + 1)}
+            >
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="rounded-full h-8 w-8"
-            onClick={() => handleUpdateQuantity("minus")}
+            className="text-red-500 hover:text-red-700"
+            onClick={handleDelete}
           >
-            <Minus className="w-4 h-4" />
-          </Button>
-          <span className="font-semibold">{currentQty}</span>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full h-8 w-8"
-            onClick={() => handleUpdateQuantity("plus")}
-          >
-            <Plus className="w-4 h-4" />
+            <Trash className="h-6 w-6" />
           </Button>
         </div>
-      </div>
-
-      <div className="flex flex-col items-end">
-        <p className="font-semibold">${totalPrice}</p>
-        <Trash
-          onClick={handleDeleteCartItem}
-          className="cursor-pointer mt-1 size-5 text-red-500 hover:text-red-700"
-        />
       </div>
     </div>
   );
