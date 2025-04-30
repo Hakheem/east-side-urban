@@ -14,7 +14,7 @@ const sessionMiddleware = (req, res, next) => {
     req.sessionId = req.user.id; 
     return next();
   }
-
+ 
   req.sessionId = req.cookies?.guestSessionId || req.sessionID;
   
   if (!req.cookies?.guestSessionId) {
@@ -31,9 +31,10 @@ const sessionMiddleware = (req, res, next) => {
 
 router.use(sessionMiddleware);
 
-router.post("/add", addToCart);
-router.put("/update", updateCartItemsQty);
-router.delete("/delete/:productId", deleteCartItem);
+router.post("/add", authMiddleware, addToCart);
+
+router.put("/update", authMiddleware, updateCartItemsQty);
+router.delete("/delete/:productId", authMiddleware, deleteCartItem);
 
 router.get("/", authMiddleware, fetchCartItems); // For authenticated users
 router.get("/guest", sessionMiddleware, fetchCartItems); // For guests

@@ -134,7 +134,7 @@ const CartWrapper = ({ setOpenCartSheet }) => {
             }}
             className="w-full"
             disabled={enrichedCartItems.length === 0}
-          >
+          > 
             Proceed to Checkout (Ksh. {total.toFixed(2)})
           </Button>
         </div>

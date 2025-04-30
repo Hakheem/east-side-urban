@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import DissolvingBanner from "@/components/common/DissolvingBanner";
 import { fetchCartItems } from "@/store/shop/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
+import { clearCart } from '@/store/shop/shopOrdersSlice';
+
 
 const Checkout = () => {
   const bannerImages = [
@@ -159,51 +161,90 @@ const Checkout = () => {
   }, [location]);
 
   // Payment Functions
-  const initiatePayment = async () => {
-    try {
-      setIsProcessing(true);
-      const orderData = {
-        userId: user.id,
-        cartItems: enrichedCartItems.map((item) => ({
-          productId: item.productId || item._id,
-          title: item.title,
-          price: item.salePrice > 0 ? item.salePrice : item.price,
-          quantity: item.quantity,
-          image: item.image || item.images?.[0] || "",
-        })),
-        totalAmount:
-          paymentMethod === "paypal" ? Number(totalUsd) : Number(totalKsh),
-        addressInfo: selectedAddress,
-        paymentMethod,
-      };
+const initiatePayment = async () => {
+  try {
+    setIsProcessing(true);
+    const orderData = {
+      userId: user.id,
+      cartItems: enrichedCartItems.map((item) => ({
+        productId: item.productId || item._id,
+        title: item.title,
+        price: item.salePrice > 0 ? item.salePrice : item.price,
+        quantity: item.quantity,
+        image: item.image || item.images?.[0] || "",
+      })),
+      totalAmount: paymentMethod === "paypal" ? Number(totalUsd) : Number(totalKsh),
+      addressInfo: selectedAddress,
+      paymentMethod,
+    };
 
-      const result = await dispatch(createOrder(orderData)).unwrap();
+    const result = await dispatch(createOrder(orderData)).unwrap();
 
-      if (paymentMethod === "paypal" && result.approvalUrl) {
-        // Store order ID for capture later
-        sessionStorage.setItem("currentOrderId", result.orderId);
-        window.location.href = result.approvalUrl;
-      } else {
-        // For COD or other non-PayPal methods
+    if (paymentMethod === "paypal") {
+      const paymentUrl = result.approvalUrl || result.paymentUrl;
+      if (!paymentUrl) {
+        throw new Error("No payment URL received from server");
+      }
+      sessionStorage.setItem("currentOrderId", result.orderId);
+      window.location.href = paymentUrl;
+    } else {
+      // For COD - clear cart and show success
+      try {
+        await dispatch(clearCart());
+        
+        setShowSuccessOverlay(true);
+        navigate("/cod-order-success", {
+          state: {
+            order: { 
+              ...orderData, 
+              _id: result.orderId,
+              status: "processing",
+              paymentStatus: "pending",
+              createdAt: new Date().toISOString()
+            },
+            paymentMethod: "cod",
+            date: new Date().toISOString(),
+            orderTotal: orderData.totalAmount
+          },
+        });
+      } catch (clearCartError) {
+        console.error("Failed to clear cart:", clearCartError);
+        // Proceed with order success even if cart clearing fails
         setShowSuccessOverlay(true);
         navigate("/order-success", {
           state: {
-            order: { ...orderData, _id: result.orderId },
-            paymentMethod,
+            order: { 
+              ...orderData, 
+              _id: result.orderId,
+              status: "processing",
+              paymentStatus: "pending",
+              createdAt: new Date().toISOString()
+            },
+            paymentMethod: "cod",
             date: new Date().toISOString(),
+            orderTotal: orderData.totalAmount,
+            cartWarning: "Your cart couldn't be automatically cleared"
           },
         });
       }
-    } catch (error) {
-      toast({
-        title: "Order Failed",
-        description: error.message || "Could not create order",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
     }
-  };
+  } catch (error) {
+    console.error("Payment initiation error:", error);
+    
+    toast({
+      title: "Order Failed",
+      description: error.payload?.details || error.message || "Could not complete order",
+      variant: "destructive",
+      duration: 5000
+    });
+
+    if (paymentMethod === "paypal") {
+      sessionStorage.removeItem("currentOrderId");
+    }
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   // Check for PayPal return on mount
   useEffect(() => {
@@ -499,7 +540,7 @@ const Checkout = () => {
                         : "border-gray-200"
                     }`}
                     onClick={() => setPaymentMethod("cod")}
-                  >
+                  > 
                     <input
                       type="radio"
                       id="cod"

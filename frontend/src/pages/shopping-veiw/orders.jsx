@@ -153,7 +153,7 @@ const Orders = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        ${orderItem?.totalAmount?.toFixed(2)}
+                        Ksh.{orderItem?.totalAmount?.toFixed(2)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Dialog

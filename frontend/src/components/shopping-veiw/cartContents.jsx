@@ -5,10 +5,11 @@ import { useDispatch } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
 import { deleteCartItem, updateCartItemsQty } from "@/store/shop/cartSlice";
 
-const CartContents = ({ cartItem }) => {
+const CartContents = ({ cartItem, onDeleteSuccess }) => {
   const dispatch = useDispatch();
   const { toast } = useToast();
   const [quantity, setQuantity] = useState(cartItem.quantity);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const displayPrice = cartItem.salePrice > 0 ? cartItem.salePrice : cartItem.price;
   const itemTotal = (displayPrice * quantity).toFixed(2);
@@ -48,17 +49,19 @@ const CartContents = ({ cartItem }) => {
 
   const handleDelete = async () => {
     try {
-      // Get the raw product ID in the most reliable way
-      const productId = cartItem.productId?._id 
+      setIsDeleting(true);
+      const productId = cartItem.productId?._id
         ? String(cartItem.productId._id).trim()
         : String(cartItem.productId).trim();
-  
+
       const result = await dispatch(deleteCartItem(productId));
-      
+
       if (result.error) {
         throw result.error;
       }
-  
+
+      onDeleteSuccess?.();
+
       toast({
         title: "Removed",
         description: `${cartItem.title} was removed from cart`,
@@ -68,16 +71,21 @@ const CartContents = ({ cartItem }) => {
       console.error("Delete failed:", {
         error: error.message,
         cartItem,
-        stack: error.stack
+        stack: error.stack,
       });
       toast({
         title: "Error",
         description: error.message || "Couldn't remove item",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const handleImageError = (e) => {
+    e.target.src = "/default-product.jpg";
+  };
 
   return (
     <div className="flex p-2 gap-3">
@@ -85,7 +93,7 @@ const CartContents = ({ cartItem }) => {
         src={cartItem.image || "/default-product.jpg"}
         alt={cartItem.title}
         className="w-16 h-16 object-cover rounded mr-2"
-        onError={(e) => (e.target.src = "/default-product.jpg")}
+        onError={handleImageError}
       />
 
       <div className="flex-1 flex flex-col justify-between">
@@ -123,6 +131,7 @@ const CartContents = ({ cartItem }) => {
             size="icon"
             className="text-red-500 hover:text-red-700"
             onClick={handleDelete}
+            disabled={isDeleting}
           >
             <Trash className="h-6 w-6" />
           </Button>

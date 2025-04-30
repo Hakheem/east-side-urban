@@ -17,8 +17,7 @@ const validateStock = async (productId, quantity) => {
   }
 };
 
-// Improved cart lookup with better session handling
-// Modify getCart function to prioritize userId:
+
 const getCart = async (userId, sessionId) => {
   try {
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {

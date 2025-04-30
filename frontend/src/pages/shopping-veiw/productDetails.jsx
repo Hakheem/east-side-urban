@@ -12,10 +12,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "@/hooks/use-toast";
 
 const ProductDetails = ({ open, setOpen, productDetails }) => {
-  if (!productDetails) return null;
+  if (!productDetails) return null; 
 
   const [reviewMsg, setReviewMsg] = useState("");
-  const [rating, setRating] = useState(0);
+  const [rating, setRating] = useState(0); 
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();
   const dispatch = useDispatch();

@@ -32,6 +32,7 @@ import Unauthorised from "./pages/unauthorised/Unauthorised";
 // Utils
 import CheckAuth from "./components/common/CheckAuth";
 import CustomLoader from "./components/ui/loader";
+import OrderSuccess from "./pages/shopping-veiw/Paypal/Cod-success";
 
 function App() {
   const dispatch = useDispatch();
@@ -63,6 +64,7 @@ function App() {
             <Route path="paypal-return" element={<PaypalReturn />} />
             <Route path="payment-success" element={<PaymentSuccess />} />
             <Route path="payment-failure" element={<PaymentFailure />} />
+            <Route path="cod-order-success" element={<OrderSuccess />} />
             <Route path="search" element={<SearchPage />} />
 
             {/* Protected shop routes */}

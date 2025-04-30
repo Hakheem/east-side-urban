@@ -65,7 +65,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
         variant: "destructive",
       });
     }
-  };
+  };  
 
   const isInCart = cartItems.some(item => item.productId === product?._id);
   const cartQuantity = cartItems.find(item => item.productId === product?._id)?.quantity || 0;

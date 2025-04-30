@@ -8,8 +8,8 @@ const initialState = {
   error: null,  
   orderList: [],
   orderDetails: null,
-  currentOrder: null, // Added for better payment tracking
-  paymentStatus: 'idle', // 'idle' | 'processing' | 'succeeded' | 'failed'
+  currentOrder: null,
+  paymentStatus: 'idle',
 };
 
 export const createOrder = createAsyncThunk(
@@ -25,26 +25,55 @@ export const createOrder = createAsyncThunk(
           }
         }
       );
-      
-      // Debugging log
-      console.log('PayPal Order Response:', response.data);
-      
-      if (!response.data.approvalUrl) {
-        throw new Error('No approval URL received from server');
+
+      console.log('Order Creation Response:', response.data);
+
+      // Validate response structure
+      if (!response.data || !response.data.orderId) {
+        throw new Error('Invalid order response from server');
       }
-      
-      return response.data;
+
+      // Handle COD orders
+      if (orderData.paymentMethod === 'cod') {
+        return {
+          type: 'cod',
+          orderId: response.data.orderId,
+          orderDate: response.data.orderDate || new Date().toISOString(),
+          success: true
+        };
+      }
+
+      // Handle PayPal orders
+      if (orderData.paymentMethod === 'paypal') {
+        const paymentUrl = response.data.approvalUrl || response.data.paymentUrl;
+        if (!paymentUrl) {
+          throw new Error('PayPal payment URL missing');
+        }
+        return {
+          type: 'paypal',
+          orderId: response.data.orderId,
+          approvalUrl: paymentUrl,
+          success: true
+        };
+      }
+
+      throw new Error(`Unsupported payment method: ${orderData.paymentMethod}`);
+
     } catch (error) {
-      // Enhanced error logging
       console.error('Order Creation Error:', {
-        config: error.config,
-        response: error.response?.data,
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
         message: error.message
       });
-      
+
       return rejectWithValue({
-        message: error.response?.data?.message || 'Failed to create payment order',
-        details: error.response?.data?.error || error.message
+        message: error.response?.data?.message || error.message,
+        code: error.response?.status || 500,
+        paymentMethod: orderData.paymentMethod,
+        isPaypalError: orderData.paymentMethod === 'paypal',
+        isCodError: orderData.paymentMethod === 'cod'
       });
     }
   }
@@ -137,8 +166,15 @@ export const getOrderDetails = createAsyncThunk(
 
 const orderSlice = createSlice({
   name: 'orders',
-  initialState,
+  initialState: {
+    cartItems: [],
+    isLoading: false,
+    error: null
+  },
   reducers: {
+    clearCart: (state) => {
+      state.cartItems = [];
+    },
     clearOrderState: (state) => {
       Object.assign(state, initialState);
     },
@@ -237,4 +273,5 @@ export const {
   setCurrentOrder 
 } = orderSlice.actions;
 
+export const { clearCart } = orderSlice.actions;
 export default orderSlice.reducer;

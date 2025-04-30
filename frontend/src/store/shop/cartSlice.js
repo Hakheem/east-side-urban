@@ -27,13 +27,15 @@ const initialState = {
 };
 
 const makeCartRequest = async (method, endpoint, data = null, getState) => {
-  const state = getState(); // Get full state first
-  const token = state?.auth?.tokenInMemory; // Safely access token
+  const state = getState();
+  const token = state?.auth?.tokenInMemory;
   const url = `${import.meta.env.VITE_URL_API}/api/cart${endpoint}`;
+
+  const hasToken = !!token;
 
   console.log(`[CART] Making ${method.toUpperCase()} request to ${url}`, { 
     data,
-    hasToken: !!token,
+    hasToken,
     timestamp: new Date().toISOString()
   });
 
@@ -43,7 +45,7 @@ const makeCartRequest = async (method, endpoint, data = null, getState) => {
       url,
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` })
+        ...(hasToken && { 'Authorization': `Bearer ${token}` })
       },
       withCredentials: true
     };
@@ -53,10 +55,14 @@ const makeCartRequest = async (method, endpoint, data = null, getState) => {
     const response = await axios(config);
     return response.data;
   } catch (error) {
-    console.error(`[CART] Request failed:`, error);
+    console.error(`[CART] ${method.toUpperCase()} ${endpoint} failed:`, {
+      message: error.response?.data?.message || error.message,
+      status: error.response?.status,
+    });
     throw error;
   }
 };
+
 
 export const addToCart = createAsyncThunk(
   "cart/addToCart",
@@ -89,31 +95,35 @@ export const addToCart = createAsyncThunk(
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchCartItems",
   async (_, { getState, rejectWithValue }) => {
+    const state = getState();
+    const isAuthenticated = state?.auth?.isAuthenticated;
+    const token = state?.auth?.tokenInMemory;
+
+    if (!isAuthenticated || !token) {
+      console.warn("[CART] Skipping fetchCartItems: not authenticated or no token");
+      const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+      return { cart: { items: localCart }, isGuest: true };
+    }
+
     try {
-      const state = getState();
-      const isAuthenticated = state?.auth?.isAuthenticated;
-
-      if (!isAuthenticated) {
-        const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
-        return { cart: { items: localCart }, isGuest: true };
-      }
-
       const response = await makeCartRequest("get", "", null, getState);
       return { cart: response.cart || { items: [] } };
-      
     } catch (error) {
       return rejectWithValue(error.message);
     }
   }
 );
 
+
 export const updateCartItemsQty = createAsyncThunk(
   "cart/updateItemsQty",
   async ({ productId, quantity }, { getState, dispatch, rejectWithValue }) => {
     const { auth } = getState();
+    const productIdStr = String(productId).trim();
+
     try {
       console.log('[CART] Updating quantity:', { 
-        productId, 
+        productId: productIdStr, 
         quantity,
         isAuthenticated: auth.isAuthenticated,
         timestamp: new Date().toISOString()
@@ -121,34 +131,39 @@ export const updateCartItemsQty = createAsyncThunk(
 
       if (!auth.isAuthenticated) {
         console.log('[CART] Guest cart quantity update');
-        dispatch(updateGuestCartItem({ productId, quantity }));
-        return { productId, quantity, isGuest: true };
+        dispatch(updateGuestCartItem({ productId: productIdStr, quantity }));
+        return { productId: productIdStr, quantity, isGuest: true };
       }
 
-      const response = await makeCartRequest(
-        "put", 
-        "/update-quantity", 
-        { productId, quantity },
-        getState
+      const response = await axios.put(
+        `${import.meta.env.VITE_URL_API}/api/cart/update`,
+        { productId: productIdStr, quantity },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth.tokenInMemory}`
+          },
+          withCredentials: true
+        }
       );
-      
+
       console.log('[CART] Quantity update successful');
       return {
-        productId,
+        productId: productIdStr,
         quantity,
-        cart: response.cart || { items: [] }
+        cart: response.data.cart || { items: [] }
       };
+
     } catch (error) {
       console.error('[CART] Update failed:', {
-        error: error.message,
-        productId,
+        error: error.response?.data || error.message,
+        productId: productIdStr,
         quantity,
         timestamp: new Date().toISOString()
       });
+
       return rejectWithValue(
-        error.response?.data?.message || 
-        error.message || 
-        "Failed to update quantity"
+        error.response?.data?.message || error.message || "Failed to update quantity"
       );
     }
   }
@@ -156,14 +171,14 @@ export const updateCartItemsQty = createAsyncThunk(
 
 
 
+
 export const deleteCartItem = createAsyncThunk(
-  "cart/deleteItem",
+  "cart/delete",
   async (productId, { getState, dispatch, rejectWithValue }) => {
     const { auth } = getState();
-    
-    try {
-      const productIdStr = String(productId).trim();
+    const productIdStr = String(productId).trim();
 
+    try {
       if (!auth.isAuthenticated) {
         // Handle guest cart deletion
         console.log('Deleting from guest cart:', productIdStr);
@@ -195,16 +210,18 @@ export const deleteCartItem = createAsyncThunk(
       
     } catch (error) {
       console.error('Delete failed:', {
-        productId,
+        productId: productIdStr,
         isAuthenticated: auth.isAuthenticated,
         error: error.response?.data || error.message
       });
+
       return rejectWithValue(
         error.response?.data?.message || "Failed to delete item"
       );
     }
   }
 );
+
 
 
 export const mergeCarts = createAsyncThunk(
