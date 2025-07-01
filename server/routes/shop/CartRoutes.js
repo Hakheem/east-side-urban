@@ -29,12 +29,12 @@ const sessionMiddleware = (req, res, next) => {
   next();
 };
 
-router.use(sessionMiddleware);
+router.use(sessionMiddleware); 
 
-router.post("/add", authMiddleware, addToCart);
+router.post("/add",sessionMiddleware, addToCart);
 
-router.put("/update", authMiddleware, updateCartItemsQty);
-router.delete("/delete/:productId", authMiddleware, deleteCartItem);
+router.put("/update", sessionMiddleware, updateCartItemsQty);
+router.delete("/delete/:productId", sessionMiddleware, deleteCartItem);
 
 router.get("/", authMiddleware, fetchCartItems); // For authenticated users
 router.get("/guest", sessionMiddleware, fetchCartItems); // For guests

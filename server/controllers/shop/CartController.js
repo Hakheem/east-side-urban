@@ -29,11 +29,13 @@ const getCart = async (userId, sessionId) => {
     }
     
     return null;
-  } catch (error) {
+  } catch (error) { 
     console.error("Cart lookup error:", error);
     throw error;
   }
 };
+
+
 
 const addToCart = async (req, res) => {
   try {
@@ -63,20 +65,20 @@ const addToCart = async (req, res) => {
     if (!cart) {
       console.log("No cart found, creating new cart...");
 
-      // Creating new cart for authenticated or guest user
       cart = await Cart.create({
         userId: userId || null,
         sessionId: userId ? null : sessionId,
         items: [{
           productId,
           quantity,
-          title: product.name,
+          title: product.title,
           price: product.price,
           salePrice: product.salePrice,
-          image: product.image?.[0] || "",
-          stock: product.totalStock,
+          image: product.image || "",
+          totalStock: product.totalStock
         }]
       });
+
       console.log("New cart created:", cart);
     } else {
       const existingItem = cart.items.find(item => item.productId.toString() === productId);
@@ -93,23 +95,22 @@ const addToCart = async (req, res) => {
         cart.items.push({
           productId,
           quantity,
-          title: product.name,
+          title: product.title,
           price: product.price,
           salePrice: product.salePrice,
-          image: product.images?.[0] || "",
-          stock: product.stock,
+          image: product.image || "",
+          totalStock: product.totalStock
         });
       }
 
-      // Log the cart before saving
       console.log("Updated cart before save:", cart);
       await cart.save();
       console.log("Cart saved successfully:", cart);
     }
 
-    // Return the updated cart in the response
+    // Return updated cart
     const updatedCart = await Cart.findById(cart._id)
-      .populate("items.productId", "name price salePrice images stock");
+      .populate("items.productId", "title price salePrice image totalStock");
 
     res.status(200).json({
       success: true,
@@ -123,8 +124,8 @@ const addToCart = async (req, res) => {
           title: item.productId.title,
           price: item.productId.price,
           salePrice: item.productId.salePrice,
-          image: item.productId.images?.[0] || "",
-          stock: item.productId.stock,
+          image: item.productId.image || "",
+          stock: item.productId.totalStock
         }))
       }
     });
@@ -136,6 +137,7 @@ const addToCart = async (req, res) => {
     });
   }
 };
+
 
 
 
@@ -354,7 +356,7 @@ const mergeGuestCart = async (req, res) => {
       success: false,
       message: "Failed to merge carts"
     });
-  }
+  } 
 };
 
 module.exports = {

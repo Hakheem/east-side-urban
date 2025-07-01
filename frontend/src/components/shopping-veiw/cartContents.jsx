@@ -138,7 +138,7 @@ const CartContents = ({ cartItem, onDeleteSuccess }) => {
         </div>
       </div>
     </div>
-  );
+  ); 
 };
 
 export default CartContents;

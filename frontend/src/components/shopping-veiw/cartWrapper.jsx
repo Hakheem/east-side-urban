@@ -141,6 +141,6 @@ const CartWrapper = ({ setOpenCartSheet }) => {
       )}
     </div>
   );
-};
+}; 
 
 export default CartWrapper;

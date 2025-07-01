@@ -76,12 +76,13 @@ export const addToCart = createAsyncThunk(
         return { isGuest: true };
       }
 
-      const response = await makeCartRequest(
-        "post", 
-        "/add", 
-        { productId, quantity, ...details },
-        getState
-      );
+    const response = await makeCartRequest(
+  "post",
+  "/add",
+  { productId, quantity },
+  getState
+);
+
       
       await dispatch(fetchCartItems());
       return response;
@@ -288,7 +289,7 @@ export const mergeCarts = createAsyncThunk(
     }
   }
 );
-
+ 
 
 
 const cartSlice = createSlice({
@@ -418,7 +419,7 @@ const cartSlice = createSlice({
 });
 
 export const {
-  addToGuestCart,
+  addToGuestCart, 
   removeFromGuestCart,
   updateGuestCartItem,
   clearGuestCart,

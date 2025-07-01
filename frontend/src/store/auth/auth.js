@@ -58,7 +58,7 @@ export const logoutUser = createAsyncThunk("auth/logout", async () => {
       message: error.response?.data?.message || "Logout failed",
     };
   }
-});
+}); 
 
 // Enhanced checkAuth in authSlice
 export const checkAuth = createAsyncThunk("auth/checkauth", async () => {
