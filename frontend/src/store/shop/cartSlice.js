@@ -93,6 +93,8 @@ export const addToCart = createAsyncThunk(
   }
 );
 
+
+
 export const fetchCartItems = createAsyncThunk(
   "cart/fetchCartItems",
   async (_, { getState, rejectWithValue }) => {
@@ -100,20 +102,29 @@ export const fetchCartItems = createAsyncThunk(
     const isAuthenticated = state?.auth?.isAuthenticated;
     const token = state?.auth?.tokenInMemory;
 
+    console.log("[CART] fetchCartItems thunk called");
+    console.log("   isAuthenticated:", isAuthenticated);
+    console.log("   tokenInMemory:", token);
+
     if (!isAuthenticated || !token) {
       console.warn("[CART] Skipping fetchCartItems: not authenticated or no token");
       const localCart = JSON.parse(localStorage.getItem("guestCart")) || [];
+      console.log("[CART] Returning guest cart from localStorage:", localCart);
       return { cart: { items: localCart }, isGuest: true };
     }
 
     try {
+      console.log("[CART] Making authenticated GET request to server...");
       const response = await makeCartRequest("get", "", null, getState);
+      console.log("[CART] Response from server:", response);
       return { cart: response.cart || { items: [] } };
     } catch (error) {
+      console.error("[CART] Error fetching server cart:", error);
       return rejectWithValue(error.message);
     }
   }
 );
+
 
 
 export const updateCartItemsQty = createAsyncThunk(
@@ -136,7 +147,8 @@ export const updateCartItemsQty = createAsyncThunk(
         return { productId: productIdStr, quantity, isGuest: true };
       }
 
-      const response = await axios.put(
+      // Update quantity on server
+      await axios.put(
         `${import.meta.env.VITE_URL_API}/api/cart/update`,
         { productId: productIdStr, quantity },
         {
@@ -148,11 +160,12 @@ export const updateCartItemsQty = createAsyncThunk(
         }
       );
 
-      console.log('[CART] Quantity update successful');
+      // Always refetch cart after update
+      const refreshed = await dispatch(fetchCartItems()).unwrap();
       return {
+        ...refreshed,
         productId: productIdStr,
         quantity,
-        cart: response.data.cart || { items: [] }
       };
 
     } catch (error) {
@@ -172,9 +185,8 @@ export const updateCartItemsQty = createAsyncThunk(
 
 
 
-
 export const deleteCartItem = createAsyncThunk(
-  "cart/delete",
+  "cart/deleteItem",
   async (productId, { getState, dispatch, rejectWithValue }) => {
     const { auth } = getState();
     const productIdStr = String(productId).trim();
@@ -182,7 +194,7 @@ export const deleteCartItem = createAsyncThunk(
     try {
       if (!auth.isAuthenticated) {
         // Handle guest cart deletion
-        console.log('Deleting from guest cart:', productIdStr);
+        console.log('[CART] Deleting from guest cart:', productIdStr);
         dispatch(removeFromGuestCart(productIdStr));
         return { 
           productId: productIdStr, 
@@ -192,9 +204,9 @@ export const deleteCartItem = createAsyncThunk(
       }
 
       // Handle authenticated user deletion
-      console.log('Deleting from user cart:', productIdStr);
-      const response = await axios.delete(
-        `${import.meta.env.VITE_URL_API}/api/cart/${encodeURIComponent(productIdStr)}`,
+      console.log('[CART] Deleting from user cart:', productIdStr);
+      await axios.delete(
+        `${import.meta.env.VITE_URL_API}/api/cart/delete/${encodeURIComponent(productIdStr)}`,
         {
           headers: {
             'Content-Type': 'application/json',
@@ -204,13 +216,15 @@ export const deleteCartItem = createAsyncThunk(
         }
       );
 
+      // Refetch cart after deletion
+      const refreshed = await dispatch(fetchCartItems()).unwrap();
       return {
-        productId: productIdStr,
-        cart: response.data.cart || { items: [] }
+        ...refreshed,
+        productId: productIdStr
       };
-      
+
     } catch (error) {
-      console.error('Delete failed:', {
+      console.error('[CART] Delete failed:', {
         productId: productIdStr,
         isAuthenticated: auth.isAuthenticated,
         error: error.response?.data || error.message
@@ -222,6 +236,7 @@ export const deleteCartItem = createAsyncThunk(
     }
   }
 );
+
 
 
 

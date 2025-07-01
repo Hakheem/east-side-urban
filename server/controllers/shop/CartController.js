@@ -2,7 +2,7 @@ const Cart = require("../../models/Cart");
 const Product = require("../../models/Products");
 const mongoose = require('mongoose');
 
-// Enhanced stock validation with better error handling
+// Validate stock
 const validateStock = async (productId, quantity) => {
   try {
     const product = await Product.findById(productId);
@@ -36,15 +36,15 @@ const getCart = async (userId, sessionId) => {
 };
 
 
-
+// Add to cart
 const addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user?.id;
-    const sessionId = req.cookies?.guestSessionId || req.sessionID;
 
-    console.log("addToCart triggered");
-    console.log({ productId, quantity, userId, sessionId });
+    console.log("=== addToCart called ===");
+    console.log("Request body:", { productId, quantity });
+    console.log("User ID:", userId);
 
     // Validate input
     if (!productId || !quantity || quantity < 1) {
@@ -58,16 +58,14 @@ const addToCart = async (req, res) => {
     const product = await validateStock(productId, quantity);
     console.log("Product validation success:", product);
 
-    // Find or create cart
-    let cart = await getCart(userId, sessionId);
+    // Find cart by userId
+    let cart = await Cart.findOne({ userId });
     console.log("Fetched cart:", cart);
 
     if (!cart) {
       console.log("No cart found, creating new cart...");
-
       cart = await Cart.create({
-        userId: userId || null,
-        sessionId: userId ? null : sessionId,
+        userId,
         items: [{
           productId,
           quantity,
@@ -78,17 +76,15 @@ const addToCart = async (req, res) => {
           totalStock: product.totalStock
         }]
       });
-
       console.log("New cart created:", cart);
     } else {
       const existingItem = cart.items.find(item => item.productId.toString() === productId);
-      console.log("Existing cart item check:", existingItem);
+      console.log("Existing cart item:", existingItem);
 
       if (existingItem) {
-        console.log("Item exists, updating quantity...");
+        console.log("Updating quantity...");
         existingItem.quantity += quantity;
-
-        // Validate stock with updated quantity
+        // Validate updated quantity
         await validateStock(productId, existingItem.quantity);
       } else {
         console.log("Adding new item to cart...");
@@ -103,29 +99,28 @@ const addToCart = async (req, res) => {
         });
       }
 
-      console.log("Updated cart before save:", cart);
       await cart.save();
-      console.log("Cart saved successfully:", cart);
+      console.log("Cart saved successfully.");
     }
 
     // Return updated cart
     const updatedCart = await Cart.findById(cart._id)
-      .populate("items.productId", "title price salePrice image totalStock");
+      .populate("items.productId", "name price salePrice images stock");
+
+    console.log("Updated cart populated:", updatedCart);
 
     res.status(200).json({
       success: true,
       message: "Item added to cart",
-      productId,
-      quantity,
       cart: {
         items: updatedCart.items.map(item => ({
           productId: item.productId._id,
           quantity: item.quantity,
-          title: item.productId.title,
+          title: item.productId.name,
           price: item.productId.price,
           salePrice: item.productId.salePrice,
-          image: item.productId.image || "",
-          stock: item.productId.totalStock
+          image: item.productId.images?.[0] || "",
+          stock: item.productId.stock
         }))
       }
     });
@@ -141,47 +136,67 @@ const addToCart = async (req, res) => {
 
 
 
-// Simplified fetchCartItems
+
+
+
+// fetchCartItems
 const fetchCartItems = async (req, res) => {
+  console.log("\n========== FETCH CART ITEMS ==========");
+  console.log("-> req.user:", req.user);
+  console.log("-> req.cookies:", req.cookies);
+  console.log("-> req.sessionID:", req.sessionID);
+
   try {
     const userId = req.user?.id;
-    const sessionId = req.cookies?.guestSessionId;
-    
-    console.log(`Fetching cart for ${userId ? 'user' : 'guest'}:`, userId || sessionId);
+    const sessionId = req.cookies?.guestSessionId || req.sessionID;
 
-    let cart; 
+    console.log(`--> Deciding fetch logic:`);
+    console.log("   userId:", userId);
+    console.log("   sessionId:", sessionId);
+
+    let cart;
     if (userId) {
+      console.log("-> Searching by userId...");
       cart = await Cart.findOne({ userId })
         .populate("items.productId", "name price salePrice images stock");
     } else if (sessionId) {
+      console.log("-> Searching by sessionId...");
       cart = await Cart.findOne({ sessionId })
         .populate("items.productId", "name price salePrice images stock");
-    } 
-
-    if (!cart) {
-      console.log('No cart found, returning empty');
+    } else {
+      console.log("-> No userId or sessionId, returning empty.");
       return res.status(200).json({
         success: true,
         cart: { items: [] }
       });
     }
 
+    if (!cart) {
+      console.log("-> No cart found, returning empty.");
+      return res.status(200).json({
+        success: true,
+        cart: { items: [] }
+      });
+    }
+
+    console.log(`-> Cart found with ${cart.items.length} items.`);
+
     res.status(200).json({
       success: true,
       cart: {
         items: cart.items.map(item => ({
-          productId: item.productId._id,
+          productId: item.productId?._id,
           quantity: item.quantity,
-          title: item.productId.name,
-          price: item.productId.price,
-          salePrice: item.productId.salePrice,
-          image: item.productId.images?.[0] || "",
-          stock: item.productId.stock
+          title: item.productId?.name,
+          price: item.productId?.price,
+          salePrice: item.productId?.salePrice,
+          image: item.productId?.images?.[0] || "",
+          stock: item.productId?.stock,
         }))
       }
     });
   } catch (error) {
-    console.error('Fetch cart error:', error);
+    console.error("Fetch cart error:", error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch cart"
@@ -189,7 +204,8 @@ const fetchCartItems = async (req, res) => {
   }
 };
 
-// Optimized updateCartItemsQty
+
+// updateCartItemsQty
 const updateCartItemsQty = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
@@ -214,7 +230,7 @@ const updateCartItemsQty = async (req, res) => {
     }
 
     const item = cart.items.find(item => 
-      item.productId.toString() === productId
+      (item.productId._id || item.productId).toString() === productId
     );
 
     if (!item) {
@@ -242,7 +258,8 @@ const updateCartItemsQty = async (req, res) => {
   }
 };
 
-// Streamlined deleteCartItem
+
+// deleteCartItem
 const deleteCartItem = async (req, res) => {
   try {
     const { productId } = req.params;
@@ -259,7 +276,7 @@ const deleteCartItem = async (req, res) => {
 
     const initialLength = cart.items.length;
     cart.items = cart.items.filter(
-      item => item.productId.toString() !== productId
+      item => (item.productId._id || item.productId).toString() !== productId
     );
 
     if (cart.items.length === initialLength) {
@@ -283,6 +300,7 @@ const deleteCartItem = async (req, res) => {
     });
   }
 };
+
 
 // Robust mergeGuestCart
 const mergeGuestCart = async (req, res) => {

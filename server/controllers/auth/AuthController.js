@@ -150,7 +150,7 @@ const authMiddleware = async (req, res, next) => {
   } catch (err) {
     console.error('Auth error:', err);
     res.clearCookie('token');
-    return res.status(401).json({ 
+    return res.status(401).json({  
       success: false,
       message: "Invalid or expired token" 
     });
