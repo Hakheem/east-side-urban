@@ -32,6 +32,6 @@ const CheckAuth = ({ children, roles = [], guestAllowed = false }) => {
   }
 
   return children;
-};
+}; 
  
 export default CheckAuth;

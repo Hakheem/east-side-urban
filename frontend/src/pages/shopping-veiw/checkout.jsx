@@ -176,7 +176,7 @@ const initiatePayment = async () => {
       totalAmount: paymentMethod === "paypal" ? Number(totalUsd) : Number(totalKsh),
       addressInfo: selectedAddress,
       paymentMethod,
-    };
+    }; 
 
     const result = await dispatch(createOrder(orderData)).unwrap();
 

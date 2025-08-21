@@ -14,8 +14,8 @@ import featuresSlice from "./common/featureSlice";
 const store = configureStore({ 
   reducer: {
     auth: authReducer, 
-    adminProducts: adminProductsSlice,
-    shopProducts: shopProductsSlice,
+    adminProducts: adminProductsSlice,  
+    shopProducts: shopProductsSlice,  
     shopCart : cartSlice,
     addresses: addressSlice,
     shopOrder : shopOrdersSlice, 

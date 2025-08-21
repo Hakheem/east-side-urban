@@ -29,6 +29,7 @@
     "date-fns": "^4.1.0",
     "framer": "^2.4.1",
     "framer-motion": "^10.18.0",
+    "google-auth-library": "^10.2.1",
     "install": "^0.13.0",
     "loaders.css": "^0.1.2",
     "lodash": "^4.17.21",

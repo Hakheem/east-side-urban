@@ -18,7 +18,7 @@ const CartContents = ({ cartItem, onDeleteSuccess }) => {
     if (newQuantity < 1) {
       setQuantity(1);
       return;
-    }
+    } 
 
     if (newQuantity > (cartItem.totalStock || Infinity)) {
       toast({

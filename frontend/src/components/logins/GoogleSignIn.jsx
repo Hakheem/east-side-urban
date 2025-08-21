@@ -1,47 +1,129 @@
-import React from 'react';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { FcGoogle } from 'react-icons/fc';
+import React from "react";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { mergeCarts, fetchCartItems } from "@/store/shop/cartSlice";
+import { useToast } from "@/hooks/use-toast";
+import { loginUser } from "../../store/auth/auth";
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-const GoogleSignIn = () => {
+const GoogleSignIn = ({ disabled }) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { toast: uiToast } = useToast();
 
-  const onSuccess = async (result) => {
-    console.log('Google Sign-In Success:', result);
-    toast.success("Login successful!");
-  
-    setTimeout(() => {
-      navigate('/home');
-    }, 1000); 
+  const onSuccess = async (credentialResponse) => {
+    try {
+      console.log("Google Sign-In Success:", credentialResponse);
+
+      // Send credential to backend
+      const response = await fetch(
+        `${import.meta.env.VITE_URL_API}/api/auth/google`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ credential: credentialResponse.credential }),
+        }
+      );
+
+      const data = await response.json();
+      console.log("Backend response:", data);
+
+      if (data.success) {
+        // ✅ Update Redux auth state
+        await dispatch(
+          loginUser.fulfilled(
+            {
+              success: true,
+              user: data.user,
+              tokenInMemory: data.token,
+            },
+            ""
+          )
+        );
+
+        // Store user for persistence (optional)
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        try {
+          // Merge guest cart after successful login
+          await dispatch(mergeCarts()).unwrap();
+          await dispatch(fetchCartItems()).unwrap();
+        } catch (cartError) {
+          console.log("Cart merge error (non-critical):", cartError);
+        }
+
+        // Success toast
+        uiToast({
+          title: "Login Successful",
+          description: `Welcome ${data.user.userName}!`,
+          variant: "success",
+        });
+
+        // Navigate after short delay
+        setTimeout(() => {
+          const redirectPath =
+            data.user.role === "admin" ? "/admin/dashboard" : "/home";
+          navigate(redirectPath);
+        }, 1000);
+      } else {
+        uiToast({
+          title: "Login Failed",
+          description: data.message || "Google authentication failed",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Google auth error:", error);
+      uiToast({
+        title: "Authentication Error",
+        description: "Failed to authenticate with Google. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
-  
 
-  const onFailure = async (result) => {
-    console.error('Google Sign-In Failed:', result);
-    toast.error("Login failed. Please try again.");
+  const onFailure = (error) => {
+    console.error("Google Sign-In Failed:", error);
+    uiToast({
+      title: "Authentication Failed",
+      description: "Google sign-in failed. Please try again.",
+      variant: "destructive",
+    });
   };
 
   return (
-    <div className="flex justify-center mt-4 w-full ">
+    <div className="w-full">
       <GoogleOAuthProvider clientId={clientId}>
-        <GoogleLogin
-          onSuccess={onSuccess}
-          onFailure={onFailure}
-          cookiePolicy={'single_host_origin'}
-          isSignedIn={true}
-          render={(renderProps) => (
-            <button
-              onClick={renderProps.onClick}
-              className="flex items-center justify-center gap-2 bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 hover:bg-gray-100 transition duration-200"
-            >
-              <FcGoogle className="text-xl" /> Sign in with Google
-            </button>
-          )}
-        />
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        {/* Google Login Button */}
+        <div className="w-full">
+          <GoogleLogin
+            onSuccess={onSuccess}
+            onError={onFailure}
+            useOneTap={false}
+            auto_select={false}
+            size="large"
+            width="100%"
+            text="signin_with"
+            theme="outline"
+            shape="rectangular"
+            disabled={disabled}
+          />
+        </div>
       </GoogleOAuthProvider>
     </div>
   );

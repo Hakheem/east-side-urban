@@ -72,7 +72,7 @@ function App() {
               path="checkout"
               element={
                 <CheckAuth>
-                  <Checkout />
+                  <Checkout /> 
                 </CheckAuth>
               }
             />

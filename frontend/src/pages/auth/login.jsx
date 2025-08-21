@@ -6,7 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "@/store/auth/auth";
 import { useToast } from "@/hooks/use-toast";
 import { mergeCarts, fetchCartItems } from "@/store/shop/cartSlice";
-import { Loader2 } from "lucide-react"; // Import spinner icon
+import { Loader2 } from "lucide-react";
+import GoogleSignIn from "@/components/logins/GoogleSignIn";
 
 const initialState = {
   email: "",
@@ -17,29 +18,38 @@ const AuthLogin = () => {
   const [formData, setFormData] = useState(initialState);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { user, isAuthenticated, isLoading, error } = useSelector(
     (state) => state.auth
   );
-  const { cartItems } = useSelector((state) => state.shopCart);
+
   const { toast } = useToast();
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setIsProcessingLogin(true);
     try {
+      // 1. Log in
       await dispatch(loginUser(formData)).unwrap();
+
+      // 2. Merge guest cart immediately
+      await dispatch(mergeCarts()).unwrap();
+
+      // 3. Fetch the merged cart
+      await dispatch(fetchCartItems()).unwrap();
+
       toast({
         title: "Login Successful",
         description: "Welcome back!",
         variant: "success",
       });
+
+      // 4. Navigate
+      navigate(user?.role === "admin" ? "/admin/dashboard" : "/home");
     } catch (err) {
       console.error("[AUTH] Login error:", err);
-      setIsProcessingLogin(false);
     }
   };
 
@@ -51,7 +61,7 @@ const AuthLogin = () => {
         variant: "destructive",
       });
       return;
-    } 
+    }
 
     toast({
       title: "Password Reset Email Sent",
@@ -63,42 +73,12 @@ const AuthLogin = () => {
   };
 
   useEffect(() => {
-    const handlePostLogin = async () => {
-      if (!isAuthenticated || !user) return;
-
-      try {
-        // 1. Fetch current user cart
-        await dispatch(fetchCartItems()).unwrap();
-        
-        // 2. Check for guest items
-        const guestItems = cartItems.filter(item => !item.userId);
-        
-        if (guestItems.length > 0) {
-          // 3. Silent merge - no toast on success
-          await dispatch(mergeCarts()).unwrap();
-        }
-        
-        // 4. Navigate based on role
-        navigate(user.role === "admin" ? "/admin/dashboard" : "/home");
-      } catch (error) {
-        console.error("[AUTH] Post-login cart merge error:", error);
-        // No toast here to keep login flow clean
-      } finally {
-        setIsProcessingLogin(false);
-      }
-    };
-
-    handlePostLogin();
-  }, [isAuthenticated, user, dispatch, navigate, cartItems]);
-
-  useEffect(() => {
     if (error) {
       toast({
         title: "Login Failed",
         description: error,
         variant: "destructive",
       });
-      setIsProcessingLogin(false);
     }
   }, [error, toast]);
 
@@ -120,34 +100,39 @@ const AuthLogin = () => {
       </div>
 
       {!showForgotPassword ? (
-        <Form
-          formControls={loginFormControl}
-          buttonText={
-            isLoading || isProcessingLogin ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Logging in...
-              </span>
-            ) : (
-              "Login"
-            )
-          }
-          formData={formData}
-          setFormData={setFormData}
-          onSubmit={onSubmit}
-          disabled={isLoading || isProcessingLogin}
-          middleContent={
-            <div className="text-right">
-              <button
-                type="button"
-                className="text-sm font-medium text-primary hover:underline"
-                onClick={() => setShowForgotPassword(true)}
-              >
-                Forgot password?
-              </button>
-            </div>
-          }
-        />
+        <>
+          <Form
+            formControls={loginFormControl}
+            buttonText={
+              isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Logging in...
+                </span>
+              ) : (
+                "Login"
+              )
+            }
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={onSubmit}
+            disabled={isLoading}
+            middleContent={
+              <div className="text-right">
+                <button
+                  type="button"
+                  className="text-sm font-medium text-primary hover:underline"
+                  onClick={() => setShowForgotPassword(true)}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            }
+          />
+
+          {/* Google Sign-In placed here - after the form */}
+          <GoogleSignIn disabled={isLoading} />
+        </>
       ) : (
         <div className="space-y-4 p-6 border rounded-lg">
           <h2 className="text-xl font-bold text-center">Reset Password</h2>

@@ -44,7 +44,7 @@ const ShopProductsDisplay = ({ product, handleProductDetails }) => {
           image: product.image,
           stock: product.totalStock
         }
-      }));
+      })); 
 
       // For logged-in users, refresh cart after adding
       if (isAuthenticated) {

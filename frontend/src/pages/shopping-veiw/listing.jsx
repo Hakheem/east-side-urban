@@ -152,7 +152,7 @@ const Listing = () => {
     <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 p-4 md:p-6">
       <Filter filters={filters} handleFilter={handleFilter} />
       <div className="bg-background w-full rounded-lg shadow-sm">
-        <div className="p-4 border-b flex gap-4 items-center justify-between">
+        <div className="p-4 px-0 md:px-4 border-b flex gap-4 items-center justify-between">
           <h2 className="text-lg font-extrabold">All Products</h2>
           <div className="flex items-center gap-2">
             <span className="text-muted-foreground">
@@ -187,7 +187,7 @@ const Listing = () => {
         </div>
 
         {/* Product Grid */}
-<div className="grid grid-cols-2 gap-4 p-4 sm:gap-2 md:grid-cols-3 lg:grid-cols-4">
+<div className="grid grid-cols-2 gap-4 md:p-4 sm:gap-2 md:grid-cols-2 lg:grid-cols-4">
   {error && <p className="text-red-500 col-span-full">Error: {error}</p>}
   {productList.length > 0 ? (
     productList.map((productItem, index) => (
