@@ -209,6 +209,36 @@ export const mergeCarts = createAsyncThunk(
   }
 );
 
+export const clearCart = createAsyncThunk(
+  "cart/clearCart",
+  async (_, { getState, dispatch, rejectWithValue }) => {
+    try {
+      const isAuthenticated = getState()?.auth?.isAuthenticated;
+
+      // For guest users: just clear localStorage
+      if (!isAuthenticated) {
+        dispatch(clearGuestCart());
+        return {
+          isGuest: true,
+          message: "Guest cart cleared successfully",
+          cart: { items: [] }
+        };
+      }
+
+      // For authenticated users: call server to clear cart
+      const response = await makeCartRequest("delete", "/clear");
+
+      return {
+        isGuest: false,
+        message: response.message || "Cart cleared successfully",
+        cart: { items: [] }
+      };
+    } catch (err) {
+      return rejectWithValue(err.message || "Failed to clear cart");
+    }
+  }
+);
+
 /* ========= Slice ========= */
 const cartSlice = createSlice({
   name: "cart",
@@ -241,8 +271,8 @@ const cartSlice = createSlice({
       }
     },
     clearGuestCart: (state) => {
-      // keep only items that belong to a user (rare for guest cart, but safe)
-      state.cartItems = state.cartItems.filter((i) => i.userId);
+      // Clear all items from guest cart
+      state.cartItems = [];
       localStorage.removeItem("guestCart");
     },
   },
@@ -324,10 +354,27 @@ const cartSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload || "Failed to delete item";
         state.lastUpdated = Date.now();
+      })
+
+      // clear cart
+      .addCase(clearCart.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(clearCart.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.cartItems = [];
+        state.error = null;
+        state.lastUpdated = Date.now();
+      })
+      .addCase(clearCart.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Failed to clear cart";
+        state.lastUpdated = Date.now();
       });
   },
 });
-
+ 
 export const {
   addToGuestCart,
   removeFromGuestCart,
@@ -335,4 +382,7 @@ export const {
   clearGuestCart,
 } = cartSlice.actions;
 
+
+
 export default cartSlice.reducer;
+

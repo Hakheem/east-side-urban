@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { clearCart } from "@/store/shop/shopOrdersSlice";
+import { clearCart } from "@/store/shop/cartSlice";
+
 
 const OrderSuccess = () => {
   const navigate = useNavigate();

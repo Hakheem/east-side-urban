@@ -10,9 +10,9 @@ const initialState = {
   orderDetails: null,
   currentOrder: null,
   paymentStatus: 'idle',
-};
+}; 
 
-export const createOrder = createAsyncThunk(
+export const createOrder = createAsyncThunk( 
   'orders/createOrder',
   async (orderData, { rejectWithValue }) => {
     try {
@@ -53,6 +53,22 @@ export const createOrder = createAsyncThunk(
           type: 'paypal',
           orderId: response.data.orderId,
           approvalUrl: paymentUrl,
+          paymentUrl: paymentUrl,
+          success: true
+        };
+      }
+
+      // Handle Paystack orders
+      if (orderData.paymentMethod === 'paystack') {
+        const paymentUrl = response.data.paymentUrl;
+        if (!paymentUrl) {
+          throw new Error('Paystack payment URL missing');
+        }
+        return {
+          type: 'paystack',
+          orderId: response.data.orderId,
+          paymentUrl: paymentUrl,
+          reference: response.data.reference,
           success: true
         };
       }
@@ -73,7 +89,62 @@ export const createOrder = createAsyncThunk(
         code: error.response?.status || 500,
         paymentMethod: orderData.paymentMethod,
         isPaypalError: orderData.paymentMethod === 'paypal',
-        isCodError: orderData.paymentMethod === 'cod'
+        isCodError: orderData.paymentMethod === 'cod',
+        isPaystackError: orderData.paymentMethod === 'paystack'
+      });
+    }
+  }
+);
+
+// New thunk for verifying Paystack payment
+export const verifyPaystackPayment = createAsyncThunk(
+  'orders/verifyPaystackPayment',
+  async ({ reference, orderId }, { rejectWithValue }) => {
+    try {
+      console.log('[Frontend] Verifying Paystack payment:', { reference, orderId });
+      
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_URL_API}/api/orders/paystack/verify/${reference}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      console.log('[Frontend] Paystack verification response:', data);
+      
+      if (!data.success) {
+        console.error('[Frontend] Verification failed in API response:', data.message);
+        throw new Error(data.message || 'Payment verification failed');
+      }
+
+      return {
+        order: data.data.order,
+        paymentDetails: {
+          reference: data.data.reference,
+          amount: data.data.amount,
+          currency: data.data.currency,
+          status: data.data.status,
+          paid_at: data.data.paid_at
+        }
+      };
+
+    } catch (error) {
+      console.error('[Frontend] Paystack verification error:', {
+        message: error.message,
+        response: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method
+        }
+      });
+      
+      return rejectWithValue({
+        message: error.response?.data?.message || 'Payment verification failed',
+        details: error.response?.data?.error || error.message,
+        status: error.response?.status || 500,
+        reference: reference
       });
     }
   }
@@ -104,7 +175,8 @@ export const capturePayment = createAsyncThunk(
 
       return {
         order: data.order,
-        captureDetails: data.captureDetails
+        captureDetails: data.captureDetails,
+        paypalDebugId: data.paypalDebugId
       };
 
     } catch (error) {
@@ -166,15 +238,8 @@ export const getOrderDetails = createAsyncThunk(
 
 const orderSlice = createSlice({
   name: 'orders',
-  initialState: {
-    cartItems: [],
-    isLoading: false,
-    error: null
-  },
+  initialState,
   reducers: {
-    clearCart: (state) => {
-      state.cartItems = [];
-    },
     clearOrderState: (state) => {
       Object.assign(state, initialState);
     },
@@ -183,6 +248,9 @@ const orderSlice = createSlice({
     },
     setCurrentOrder: (state, action) => {
       state.currentOrder = action.payload;
+    },
+    setPaymentReference: (state, action) => {
+      state.paymentReference = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -195,8 +263,9 @@ const orderSlice = createSlice({
       })
       .addCase(createOrder.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.approvalUrl = action.payload.approvalUrl;
+        state.approvalUrl = action.payload.approvalUrl || action.payload.paymentUrl;
         state.orderId = action.payload.orderId;
+        state.paymentReference = action.payload.reference;
         state.currentOrder = action.payload;
         state.paymentStatus = 'succeeded';
         sessionStorage.setItem('currentOrder', JSON.stringify(action.payload));
@@ -210,7 +279,28 @@ const orderSlice = createSlice({
         state.paymentStatus = 'failed';
       })
 
-      // Capture Payment
+      // Verify Paystack Payment
+      .addCase(verifyPaystackPayment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+        state.paymentStatus = 'processing';
+      })
+      .addCase(verifyPaystackPayment.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.paymentStatus = 'succeeded';
+        if (!state.orderList) state.orderList = [];
+        state.orderList.push(action.payload.order);
+      })
+      .addCase(verifyPaystackPayment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = {
+          message: action.payload?.message || 'Payment verification failed',
+          details: action.payload?.details
+        };
+        state.paymentStatus = 'failed';
+      })
+
+      // Capture Payment (PayPal)
       .addCase(capturePayment.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -270,8 +360,8 @@ const orderSlice = createSlice({
 export const { 
   clearOrderState, 
   resetOrderDetails,
-  setCurrentOrder 
+  setCurrentOrder,
+  setPaymentReference
 } = orderSlice.actions;
 
-export const { clearCart } = orderSlice.actions;
 export default orderSlice.reducer;

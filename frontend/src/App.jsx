@@ -33,6 +33,7 @@ import Unauthorised from "./pages/unauthorised/Unauthorised";
 import CheckAuth from "./components/common/CheckAuth";
 import CustomLoader from "./components/ui/loader";
 import OrderSuccess from "./pages/shopping-veiw/Paypal/Cod-success";
+import PaystackCallback from "./components/shopping-veiw/PaystackCallback";
 
 function App() {
   const dispatch = useDispatch();
@@ -66,6 +67,7 @@ function App() {
             <Route path="payment-failure" element={<PaymentFailure />} />
             <Route path="cod-order-success" element={<OrderSuccess />} />
             <Route path="search" element={<SearchPage />} />
+            <Route path="/paystack-callback" element={<PaystackCallback />} />
 
             {/* Protected shop routes */}
             <Route
