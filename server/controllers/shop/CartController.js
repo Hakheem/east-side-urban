@@ -7,8 +7,8 @@ const validateStock = async (productId, quantity) => {
   try {
     const product = await Product.findById(productId);
     if (!product) throw new Error("Product not found");
-    if (product.stock < quantity) {
-      throw new Error(`Only ${product.stock} item(s) available`);
+    if (product.totalStock < quantity) {
+      throw new Error(`Only ${product.totalStock} item(s) available`);
     }
     return product; 
   } catch (error) {
@@ -105,7 +105,8 @@ const addToCart = async (req, res) => {
 
     // Return updated cart
     const updatedCart = await Cart.findById(cart._id)
-      .populate("items.productId", "name price salePrice images stock");
+    .populate("items.productId", "title price salePrice image totalStock")
+
 
     console.log("Updated cart populated:", updatedCart);
 
@@ -116,11 +117,11 @@ const addToCart = async (req, res) => {
         items: updatedCart.items.map(item => ({
           productId: item.productId._id,
           quantity: item.quantity,
-          title: item.productId.name,
+          title: item.productId.title,
           price: item.productId.price,
           salePrice: item.productId.salePrice,
-          image: item.productId.images?.[0] || "",
-          stock: item.productId.stock
+          image: item.productId.image || "",
+          stock: item.productId.totalStock
         }))
       }
     });
@@ -158,11 +159,12 @@ const fetchCartItems = async (req, res) => {
     if (userId) {
       console.log("-> Searching by userId...");
       cart = await Cart.findOne({ userId })
-        .populate("items.productId", "name price salePrice images stock");
+      .populate("items.productId", "title price salePrice image totalStock")
+
     } else if (sessionId) {
       console.log("-> Searching by sessionId...");
-      cart = await Cart.findOne({ sessionId })
-        .populate("items.productId", "name price salePrice images stock");
+      cart = await Cart.findOne({ sessionId }).populate("items.productId", "title price salePrice image totalStock")
+
     } else {
       console.log("-> No userId or sessionId, returning empty.");
       return res.status(200).json({
@@ -187,11 +189,11 @@ const fetchCartItems = async (req, res) => {
         items: cart.items.map(item => ({
           productId: item.productId?._id,
           quantity: item.quantity,
-          title: item.productId?.name,
+          title: item.productId?.title,
           price: item.productId?.price,
           salePrice: item.productId?.salePrice,
-          image: item.productId?.images?.[0] || "",
-          stock: item.productId?.stock,
+          image: item.productId?.image || "",
+          stock: item.productId?.totalStock,
         }))
       }
     });
@@ -301,81 +303,144 @@ const deleteCartItem = async (req, res) => {
   }
 };
 
-
-// Robust mergeGuestCart
 const mergeGuestCart = async (req, res) => {
   const userId = req.user.id;
   const sessionId = req.cookies?.guestSessionId;
+  const guestCartItems = req.body?.guestCartItems || [];
 
   console.log(`[CartController] Merging carts - userId: ${userId}, sessionId: ${sessionId}`);
+  console.log("[CartController] Received guestCartItems:", guestCartItems);
 
   try {
-    if (!sessionId) {
-      console.log("[CartController] No guest session ID found");
-      return res.status(200).json({ success: true });
+    let guestCart = null;
+    if (sessionId) {
+      guestCart = await Cart.findOne({ sessionId });
+      console.log("[CartController] Guest cart from DB:", guestCart);
     }
 
-    const guestCart = await Cart.findOne({ sessionId });
-    console.log("[CartController] Guest cart to merge:", guestCart);
+    const itemsToMerge = [];
 
-    if (!guestCart || guestCart.items.length === 0) {
-      console.log("[CartController] No guest cart items to merge");
-      return res.status(200).json({ success: true });
+    // 1️⃣ Items from DB guest cart
+    if (guestCart && guestCart.items.length > 0) {
+      itemsToMerge.push(...guestCart.items);
     }
 
-    let userCart = await Cart.findOne({ userId });
-    console.log("[CartController] Existing user cart:", userCart);
-
-    if (!userCart) {
-      console.log("[CartController] Creating new user cart");
-      userCart = await Cart.create({
-        userId,
-        items: guestCart.items
-      });
-    } else {
-      console.log("[CartController] Merging into existing user cart");
-      for (const guestItem of guestCart.items) {
-        const existingItem = userCart.items.find(item =>
-          item.productId.equals(guestItem.productId)
-        );
-        
-        if (existingItem) {
-          existingItem.quantity += guestItem.quantity;
-        } else {
-          userCart.items.push(guestItem);
+    // 2️⃣ Items from posted guestCartItems
+    if (guestCartItems.length > 0) {
+      for (const item of guestCartItems) {
+        if (item.productId && item.quantity > 0) {
+          itemsToMerge.push({
+            productId: item.productId,
+            quantity: item.quantity
+          });
         }
       }
-      await userCart.save();
     }
 
-    await Cart.deleteOne({ sessionId });
-    console.log("[CartController] Guest cart deleted after merge");
+    if (itemsToMerge.length === 0) {
+      console.log("[CartController] No guest items to merge, returning current user cart");
+      const existing = await Cart.findOne({ userId })
+      .populate("items.productId", "title price salePrice image totalStock")
 
+      return res.status(200).json({
+        success: true,
+      cart: {
+  items: existing
+    ? existing.items.map(item => ({
+        productId: item.productId._id,
+        quantity: item.quantity,
+        title: item.productId.title,
+        price: item.productId.price, 
+        salePrice: item.productId.salePrice,
+        totalStock: item.productId.totalStock,
+        image: item.productId.image || ""
+      }))
+    : []
+}
+
+      });
+    }
+
+    // 3️⃣ Get or create user cart
+    let userCart = await Cart.findOne({ userId });
+    if (!userCart) {
+      console.log("[CartController] No user cart found, creating new one...");
+      userCart = await Cart.create({
+        userId,
+        items: []
+      });
+    }
+
+    // 4️⃣ Merge logic (IMPORTANT PART)
+    for (const guestItem of itemsToMerge) {
+      const existingItem = userCart.items.find(i =>
+        i.productId.toString() === guestItem.productId.toString()
+      );
+
+      if (existingItem) {
+        existingItem.quantity += guestItem.quantity;
+      } else {
+        // ✅ Fetch product to get required fields
+        const product = await Product.findById(guestItem.productId);
+
+        if (!product) {
+          console.warn(`[CartController] Product not found for ID: ${guestItem.productId}, skipping`);
+          continue;
+        }
+
+        userCart.items.push({
+          productId: product._id,
+          quantity: guestItem.quantity,
+          title: product.name,
+          price: product.price,
+          salePrice: product.salePrice,
+          totalStock: product.totalStock,
+          image: product.image || ""
+        });
+      }
+    }
+
+    await userCart.save();
+    console.log("[CartController] Merged items saved to user cart");
+
+    // 5️⃣ Delete guest cart from DB
+    if (guestCart) {
+      await Cart.deleteOne({ sessionId });
+      console.log("[CartController] Guest cart deleted from DB");
+    }
+
+    // 6️⃣ Return updated cart
     const mergedCart = await Cart.findOne({ userId })
-      .populate("items.productId", "name price salePrice images stock");
+    .populate("items.productId", "title price salePrice image totalStock")
 
-    console.log("[CartController] Merged cart result:", mergedCart);
+
+    console.log("[CartController] Final merged cart:", mergedCart);
 
     res.status(200).json({
       success: true,
       cart: {
-        items: mergedCart.items.map(item => ({
-          productId: item.productId._id,
-          quantity: item.quantity,
-          title: item.productId.name,
-          price: item.productId.price,
-          image: item.productId.images?.[0] || ""
-        }))
+      items: mergedCart.items.map(item => ({
+  productId: item.productId._id,
+  quantity: item.quantity,
+  title: item.productId.title,
+  price: item.productId.price,
+  salePrice: item.productId.salePrice,
+  totalStock: item.productId.totalStock,
+  image: item.productId.image || ""
+}))
+
       }
     });
   } catch (error) {
     console.error("[CartController] Merge error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to merge carts"
+      message: "Failed to merge carts",
+      cart: { items: [] }
     });
-  } 
+  }
 };
+
 
 module.exports = {
   addToCart,

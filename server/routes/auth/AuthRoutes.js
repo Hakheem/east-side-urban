@@ -4,19 +4,17 @@ const {
   loginUser,
   logoutUser,
   authMiddleware,
+  googleAuth,
+  checkAuthStatus, 
 } = require("../../controllers/auth/AuthController");
 const router = express.Router();
-
+ 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/google", googleAuth); 
 router.post("/logout", logoutUser);
  
-router.get("/check-auth", authMiddleware, (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "User authenticated",
-    user: req.user,
-  });
-});
+// Use the proper controller function
+router.get("/check-auth", authMiddleware, checkAuthStatus);
 
 module.exports = router;

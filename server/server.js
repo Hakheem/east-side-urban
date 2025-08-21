@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const session = require("express-session"); // ⭐ NEW
 
 const authRouter = require("./routes/auth/AuthRoutes");
 const adminProductsRouter = require('./routes/admin/productRoutes');
@@ -18,25 +19,39 @@ const commonFeatureRouter = require('./routes/common/featureRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173'; 
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 mongoose
   .connect(process.env.DB_URL)
   .then(() => console.log("Database connected"))
   .catch((error) => console.log("Error connecting to DB:", error));
 
-  app.use(cors({
-    origin: CLIENT_URL,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  }));
+app.use(cors({
+  origin: CLIENT_URL,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
 app.options("*", cors());
 
 app.use(cookieParser());
-app.use(express.json()); 
+app.use(express.json());
 
+
+app.use(session({
+  name: 'eastside',
+  secret: process.env.SESSION_SECRET || 'myverylongrandomsecret5674', 
+  resave: false,
+  saveUninitialized: true, 
+  cookie: {
+    secure: false, // set true if using HTTPS
+    httpOnly: true,
+    maxAge: 1000 * 60 * 60 * 24 * 7 
+  }
+}));
+
+// 🚀 API Routes
 app.use("/api/auth", authRouter);
 app.use("/api/admin/products", adminProductsRouter);
 app.use("/api/admin/orders", adminOrderRouter);
@@ -45,8 +60,7 @@ app.use("/api/cart", CartRouter);
 app.use("/api/address", AddressRouter);
 app.use("/api/orders", shopOrderRouter);
 app.use("/api/search", shopSearchRouter);
-app.use("/api/reviews", reviewRouter);
+app.use("/api/reviews", reviewRouter); 
 app.use("/api/common/features", commonFeatureRouter);
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
- 
