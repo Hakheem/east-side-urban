@@ -1,4 +1,3 @@
-
 const express = require("express");
 const router = express.Router();
 const {
@@ -6,6 +5,7 @@ const {
   fetchCartItems,
   updateCartItemsQty,
   deleteCartItem,
+  clearCart,
   mergeGuestCart,
 } = require("../../controllers/shop/CartController");
 const { authMiddleware } = require("../../controllers/auth/AuthController");
@@ -35,6 +35,7 @@ const sessionMiddleware = (req, res, next) => {
 router.post("/add", authMiddleware, addToCart);
 router.put("/update", authMiddleware, updateCartItemsQty);
 router.delete("/delete/:productId", authMiddleware, deleteCartItem);
+router.delete("/clear", authMiddleware, clearCart); // Add clearCart route
 router.get("/", authMiddleware, fetchCartItems);
 router.post("/merge", authMiddleware, mergeGuestCart);
 
@@ -43,5 +44,6 @@ router.get("/guest", sessionMiddleware, fetchCartItems);
 router.post("/guest/add", sessionMiddleware, addToCart);
 router.put("/guest/update", sessionMiddleware, updateCartItemsQty);
 router.delete("/guest/delete/:productId", sessionMiddleware, deleteCartItem);
+router.delete("/guest/clear", sessionMiddleware, clearCart); // Add clearCart for guests too
 
 module.exports = router;

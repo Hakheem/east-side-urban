@@ -17,7 +17,6 @@ const validateStock = async (productId, quantity) => {
   }
 };
 
-
 const getCart = async (userId, sessionId) => {
   try {
     if (userId && mongoose.Types.ObjectId.isValid(userId)) {
@@ -34,7 +33,6 @@ const getCart = async (userId, sessionId) => {
     throw error;
   }
 };
-
 
 // Add to cart
 const addToCart = async (req, res) => {
@@ -107,7 +105,6 @@ const addToCart = async (req, res) => {
     const updatedCart = await Cart.findById(cart._id)
     .populate("items.productId", "title price salePrice image totalStock")
 
-
     console.log("Updated cart populated:", updatedCart);
 
     res.status(200).json({
@@ -133,12 +130,6 @@ const addToCart = async (req, res) => {
     });
   }
 };
-
-
-
-
-
-
 
 // fetchCartItems
 const fetchCartItems = async (req, res) => {
@@ -206,7 +197,6 @@ const fetchCartItems = async (req, res) => {
   }
 };
 
-
 // updateCartItemsQty
 const updateCartItemsQty = async (req, res) => {
   try {
@@ -260,7 +250,6 @@ const updateCartItemsQty = async (req, res) => {
   }
 };
 
-
 // deleteCartItem
 const deleteCartItem = async (req, res) => {
   try {
@@ -299,6 +288,57 @@ const deleteCartItem = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete item"
+    });
+  }
+};
+
+// Clear cart function
+const clearCart = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const sessionId = req.sessionID;
+
+    console.log('[CLEAR CART] Request:', {
+      userId,
+      sessionId,
+      userAgent: req.headers['user-agent']?.substring(0, 50)
+    });
+
+    if (!userId && !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'No user or session identifier found'
+      });
+    }
+
+    // For authenticated users, clear by userId
+    if (userId) {
+      const result = await Cart.deleteMany({ userId });
+      console.log(`[CLEAR CART] Cleared ${result.deletedCount} cart items for user:`, userId);
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Cart cleared successfully',
+        deletedCount: result.deletedCount
+      });
+    }
+
+    // For guests, clear by sessionId
+    const result = await Cart.deleteMany({ sessionId });
+    console.log(`[CLEAR CART] Cleared ${result.deletedCount} cart items for session:`, sessionId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cart cleared successfully',
+      deletedCount: result.deletedCount
+    });
+
+  } catch (error) {
+    console.error('[CLEAR CART] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error clearing cart',
+      error: error.message
     });
   }
 };
@@ -344,20 +384,19 @@ const mergeGuestCart = async (req, res) => {
 
       return res.status(200).json({
         success: true,
-      cart: {
-  items: existing
-    ? existing.items.map(item => ({
-        productId: item.productId._id,
-        quantity: item.quantity,
-        title: item.productId.title,
-        price: item.productId.price, 
-        salePrice: item.productId.salePrice,
-        totalStock: item.productId.totalStock,
-        image: item.productId.image || ""
-      }))
-    : []
-}
-
+        cart: {
+          items: existing
+            ? existing.items.map(item => ({
+                productId: item.productId._id,
+                quantity: item.quantity,
+                title: item.productId.title,
+                price: item.productId.price, 
+                salePrice: item.productId.salePrice,
+                totalStock: item.productId.totalStock,
+                image: item.productId.image || ""
+              }))
+            : []
+        }
       });
     }
 
@@ -413,22 +452,20 @@ const mergeGuestCart = async (req, res) => {
     const mergedCart = await Cart.findOne({ userId })
     .populate("items.productId", "title price salePrice image totalStock")
 
-
     console.log("[CartController] Final merged cart:", mergedCart);
 
     res.status(200).json({
       success: true,
       cart: {
-      items: mergedCart.items.map(item => ({
-  productId: item.productId._id,
-  quantity: item.quantity,
-  title: item.productId.title,
-  price: item.productId.price,
-  salePrice: item.productId.salePrice,
-  totalStock: item.productId.totalStock,
-  image: item.productId.image || ""
-}))
-
+        items: mergedCart.items.map(item => ({
+          productId: item.productId._id,
+          quantity: item.quantity,
+          title: item.productId.title,
+          price: item.productId.price,
+          salePrice: item.productId.salePrice,
+          totalStock: item.productId.totalStock,
+          image: item.productId.image || ""
+        }))
       }
     });
   } catch (error) {
@@ -441,11 +478,11 @@ const mergeGuestCart = async (req, res) => {
   }
 };
 
-
 module.exports = {
   addToCart,
   fetchCartItems,
   updateCartItemsQty,
   deleteCartItem,
+  clearCart,
   mergeGuestCart
 };

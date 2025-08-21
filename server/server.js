@@ -14,7 +14,7 @@ const shopOrderRouter = require('./routes/shop/orderRoutes');
 const adminOrderRouter = require('./routes/admin/adminOrderRoutes');
 const shopSearchRouter = require('./routes/shop/searchRoutes');
 const reviewRouter = require('./routes/shop/reviewRoutes');
-const commonFeatureRouter = require('./routes/common/featureRoutes');
+const commonFeatureRouter = require('./routes/common/featureRoutes'); 
 
 const app = express();
 const PORT = process.env.PORT || 5000;

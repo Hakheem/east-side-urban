@@ -23,12 +23,42 @@ const OrderSchema = new mongoose.Schema({
   },
   orderStatus: String,
   paymentMethod: String,
-  paymentStatus: String,
+  paymentStatus: {
+    type: String,
+    default: "pending"
+  },
   totalAmount: Number,
-  orderDate: Date, 
-  orderUpdateDate: Date,
+  orderDate: {
+    type: Date,
+    default: Date.now
+  },
+  orderUpdateDate: {
+    type: Date,
+    default: Date.now
+  },
   paymentId: String,
   payerId: String,
+  // Paystack specific fields
+ paymentReference: {
+  type: String,
+  required: false,
+},
+  paystackAuthorizationUrl: String,
+  currency: {
+    type: String,
+    default: "KES"
+  },
+  isPaid: {
+    type: Boolean,
+    default: false
+  },
+  paidAt: Date,
+});
+
+// Update orderUpdateDate before saving
+OrderSchema.pre('save', function(next) {
+  this.orderUpdateDate = Date.now();
+  next();
 });
 
 module.exports = mongoose.model("Order", OrderSchema);
