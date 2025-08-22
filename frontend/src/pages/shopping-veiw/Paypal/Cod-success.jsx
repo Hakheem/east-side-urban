@@ -17,7 +17,7 @@ const OrderSuccess = () => {
     id: state?.orderId || "N/A",
     date: state?.date || new Date().toISOString(),
     total: state?.orderTotal || 0,
-    paymentMethod: state?.paymentMethod || "cod",
+    paymentMethod: state?.paymentMethod || "Cash on delivery",
     items: state?.cartItems || [],
   };
 

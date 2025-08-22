@@ -11,7 +11,7 @@ import DissolvingBanner from "@/components/common/DissolvingBanner";
 import { fetchCartItems, clearCart } from "@/store/shop/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Checkout = () => { 
+const Checkout = () => {
   const bannerImages = [
     images.account,
     images.accesoriesHeader,
@@ -19,7 +19,7 @@ const Checkout = () => {
   ];
 
   // Redux and Router Hooks
-  const dispatch = useDispatch();  
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -46,16 +46,21 @@ const Checkout = () => {
     const fetchExchangeRate = async () => {
       try {
         setIsLoadingRate(true);
-        const response = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=KES');
+        const response = await fetch(
+          "https://api.exchangerate.host/latest?base=USD&symbols=KES"
+        );
         const data = await response.json();
-        
+
         if (data.success && data.rates.KES) {
           setExchangeRate(data.rates.KES);
         } else {
-          console.warn('Failed to fetch exchange rate, using default:', exchangeRate);
+          console.warn(
+            "Failed to fetch exchange rate, using default:",
+            exchangeRate
+          );
         }
       } catch (error) {
-        console.error('Error fetching exchange rate:', error);
+        console.error("Error fetching exchange rate:", error);
       } finally {
         setIsLoadingRate(false);
       }
@@ -88,35 +93,34 @@ const Checkout = () => {
     0
   );
   const totalUsd = (totalKsh / exchangeRate).toFixed(2);
-  const displayTotal = paymentMethod === "paypal" 
-    ? `$${totalUsd}` 
-    : `Ksh. ${totalKsh.toFixed(2)}`;
+  const displayTotal =
+    paymentMethod === "paypal" ? `$${totalUsd}` : `Ksh. ${totalKsh.toFixed(2)}`;
 
   // Improved cart clearing function
   const clearCartWithFallback = async () => {
     try {
-      console.log('[Checkout] Clearing cart after successful order...');
+      console.log("[Checkout] Clearing cart after successful order...");
       await dispatch(clearCart()).unwrap();
-      console.log('[Checkout] Cart cleared successfully');
+      console.log("[Checkout] Cart cleared successfully");
       return { success: true };
     } catch (error) {
-      console.error('[Checkout] Failed to clear cart:', error);
-      
+      console.error("[Checkout] Failed to clear cart:", error);
+
       // Show a toast notification but don't block the success flow
       toast({
         title: "Cart Warning",
-        description: "Your order was successful, but we couldn't automatically clear your cart. Please refresh the page.",
+        description:
+          "Your order was successful, but we couldn't automatically clear your cart. Please refresh the page.",
         variant: "warning",
-        duration: 8000
+        duration: 8000,
       });
-      
+
       return { success: false, error: error.message };
     }
   };
 
   // Handle payment capture when returning from PayPal
   const handlePaymentCapture = async () => {
-    console.log("\n====== FRONTEND: STARTING PAYMENT CAPTURE ======");
     try {
       setIsCapturingPayment(true);
       const urlParams = new URLSearchParams(window.location.search);
@@ -157,7 +161,7 @@ const Checkout = () => {
           order: result.order,
           paymentMethod: "paypal",
           debugId: result.paypalDebugId,
-          cartCleared: cartClearResult.success
+          cartCleared: cartClearResult.success,
         },
       });
     } catch (error) {
@@ -213,10 +217,11 @@ const Checkout = () => {
           quantity: item.quantity,
           image: item.image || item.images?.[0] || "",
         })),
-        totalAmount: paymentMethod === "paypal" ? Number(totalUsd) : Number(totalKsh),
+        totalAmount:
+          paymentMethod === "paypal" ? Number(totalUsd) : Number(totalKsh),
         addressInfo: selectedAddress,
         paymentMethod,
-      }; 
+      };
 
       const result = await dispatch(createOrder(orderData)).unwrap();
 
@@ -238,32 +243,33 @@ const Checkout = () => {
       } else {
         // For COD - clear cart and show success
         const cartClearResult = await clearCartWithFallback();
-        
+
         setShowSuccessOverlay(true);
         navigate("/cod-order-success", {
           state: {
-            order: { 
-              ...orderData, 
+            order: {
+              ...orderData,
               _id: result.orderId,
               status: "processing",
               paymentStatus: "pending",
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
             },
             paymentMethod: "cod",
             date: new Date().toISOString(),
             orderTotal: orderData.totalAmount,
-            cartCleared: cartClearResult.success
+            cartCleared: cartClearResult.success,
           },
         });
       }
     } catch (error) {
       console.error("Payment initiation error:", error);
-      
+
       toast({
         title: "Order Failed",
-        description: error.payload?.details || error.message || "Could not complete order",
+        description:
+          error.payload?.details || error.message || "Could not complete order",
         variant: "destructive",
-        duration: 5000
+        duration: 5000,
       });
 
       if (paymentMethod === "paypal" || paymentMethod === "paystack") {
@@ -335,7 +341,8 @@ const Checkout = () => {
           </div>
           <h3 className="text-lg font-bold mb-2">Confirm Cash on Delivery</h3>
           <p className="text-gray-600 mb-4">
-            You will pay <span className="font-bold">Ksh. {totalKsh.toFixed(2)}</span> when
+            You will pay{" "}
+            <span className="font-bold">Ksh. {totalKsh.toFixed(2)}</span> when
             your order arrives.
           </p>
           <p className="text-sm text-red-500 mb-6">
@@ -402,7 +409,9 @@ const Checkout = () => {
             ? `Your payment of $${totalUsd} was completed.`
             : paymentMethod === "paystack"
             ? `Your payment of Ksh. ${totalKsh.toFixed(2)} was completed.`
-            : `We'll contact you for delivery of your Ksh. ${totalKsh.toFixed(2)} order.`}
+            : `We'll contact you for delivery of your Ksh. ${totalKsh.toFixed(
+                2
+              )} order.`}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
@@ -470,11 +479,15 @@ const Checkout = () => {
                 {paymentMethod === "paypal" ? (
                   <>
                     <div className="font-bold text-lg">${totalUsd}</div>
-                    <div className="text-sm text-gray-500">≈ Ksh. {totalKsh.toFixed(2)}</div>
+                    <div className="text-sm text-gray-500">
+                      ≈ Ksh. {totalKsh.toFixed(2)}
+                    </div>
                   </>
                 ) : (
                   <>
-                    <div className="font-bold text-lg">Ksh. {totalKsh.toFixed(2)}</div>
+                    <div className="font-bold text-lg">
+                      Ksh. {totalKsh.toFixed(2)}
+                    </div>
                     <div className="text-sm text-gray-500">≈ ${totalUsd}</div>
                   </>
                 )}
@@ -579,7 +592,7 @@ const Checkout = () => {
                         : "border-gray-200"
                     }`}
                     onClick={() => setPaymentMethod("cod")}
-                  > 
+                  >
                     <input
                       type="radio"
                       id="cod"
@@ -646,4 +659,3 @@ const Checkout = () => {
 };
 
 export default Checkout;
-
