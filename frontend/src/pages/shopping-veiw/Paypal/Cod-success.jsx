@@ -6,7 +6,6 @@ import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { clearCart } from "@/store/shop/cartSlice";
 
-
 const OrderSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();

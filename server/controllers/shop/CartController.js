@@ -343,47 +343,67 @@ const clearCart = async (req, res) => {
   }
 };
 
+
 const mergeGuestCart = async (req, res) => {
   const userId = req.user.id;
-  const sessionId = req.cookies?.guestSessionId;
+  const sessionId = req.cookies?.guestSessionId || req.sessionID;
   const guestCartItems = req.body?.guestCartItems || [];
 
   console.log(`[CartController] Merging carts - userId: ${userId}, sessionId: ${sessionId}`);
-  console.log("[CartController] Received guestCartItems:", guestCartItems);
+  console.log("[CartController] Received guestCartItems:", JSON.stringify(guestCartItems, null, 2));
 
   try {
     let guestCart = null;
     if (sessionId) {
       guestCart = await Cart.findOne({ sessionId });
-      console.log("[CartController] Guest cart from DB:", guestCart);
+      console.log("[CartController] Guest cart from DB:", guestCart ? `Found with ${guestCart.items.length} items` : 'Not found');
     }
 
     const itemsToMerge = [];
 
-    // 1️⃣ Items from DB guest cart
+    // 1️⃣ Items from DB guest cart (if exists)
     if (guestCart && guestCart.items.length > 0) {
-      itemsToMerge.push(...guestCart.items);
+      console.log("[CartController] Adding items from DB guest cart");
+      itemsToMerge.push(...guestCart.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity
+      })));
     }
 
-    // 2️⃣ Items from posted guestCartItems
+    // 2️⃣ Items from posted guestCartItems (from localStorage)
     if (guestCartItems.length > 0) {
+      console.log("[CartController] Adding items from frontend localStorage");
       for (const item of guestCartItems) {
         if (item.productId && item.quantity > 0) {
-          itemsToMerge.push({
-            productId: item.productId,
-            quantity: item.quantity
-          });
+          // Check if this product is already in itemsToMerge from DB
+          const existingMergeItem = itemsToMerge.find(i => 
+            i.productId.toString() === item.productId.toString()
+          );
+          
+          if (existingMergeItem) {
+            // Combine quantities if same product exists in both DB and localStorage
+            existingMergeItem.quantity += item.quantity;
+            console.log(`[CartController] Combined quantities for product ${item.productId}: ${existingMergeItem.quantity}`);
+          } else {
+            itemsToMerge.push({
+              productId: item.productId,
+              quantity: item.quantity
+            });
+          }
         }
       }
     }
 
+    console.log(`[CartController] Total items to merge: ${itemsToMerge.length}`);
+
     if (itemsToMerge.length === 0) {
       console.log("[CartController] No guest items to merge, returning current user cart");
       const existing = await Cart.findOne({ userId })
-      .populate("items.productId", "title price salePrice image totalStock")
+        .populate("items.productId", "title price salePrice image totalStock");
 
       return res.status(200).json({
         success: true,
+        message: "No guest items to merge",
         cart: {
           items: existing
             ? existing.items.map(item => ({
@@ -392,7 +412,7 @@ const mergeGuestCart = async (req, res) => {
                 title: item.productId.title,
                 price: item.productId.price, 
                 salePrice: item.productId.salePrice,
-                totalStock: item.productId.totalStock,
+                stock: item.productId.totalStock,
                 image: item.productId.image || ""
               }))
             : []
@@ -410,78 +430,127 @@ const mergeGuestCart = async (req, res) => {
       });
     }
 
-    // 4️⃣ Merge logic (IMPORTANT PART)
+    console.log(`[CartController] User cart has ${userCart.items.length} existing items`);
+
+    // 4️⃣ Merge logic with proper validation
+    let mergedCount = 0;
+    let skippedCount = 0;
+    
     for (const guestItem of itemsToMerge) {
-      const existingItem = userCart.items.find(i =>
-        i.productId.toString() === guestItem.productId.toString()
-      );
-
-      if (existingItem) {
-        existingItem.quantity += guestItem.quantity;
-      } else {
-        // ✅ Fetch product to get required fields
+      try {
+        // Validate and fetch product details
         const product = await Product.findById(guestItem.productId);
-
+        
         if (!product) {
           console.warn(`[CartController] Product not found for ID: ${guestItem.productId}, skipping`);
+          skippedCount++;
           continue;
         }
 
-        userCart.items.push({
-          productId: product._id,
-          quantity: guestItem.quantity,
-          title: product.name,
-          price: product.price,
-          salePrice: product.salePrice,
-          totalStock: product.totalStock,
-          image: product.image || ""
-        });
+        // Check stock availability
+        if (product.totalStock < guestItem.quantity) {
+          console.warn(`[CartController] Insufficient stock for ${product.title}: requested ${guestItem.quantity}, available ${product.totalStock}`);
+          // You can choose to either skip this item or add available quantity
+          // For now, let's add available quantity if > 0
+          if (product.totalStock > 0) {
+            guestItem.quantity = product.totalStock;
+          } else {
+            skippedCount++;
+            continue;
+          }
+        }
+
+        // Find existing item in user cart
+        const existingItem = userCart.items.find(i =>
+          i.productId.toString() === guestItem.productId.toString()
+        );
+
+        if (existingItem) {
+          // Update existing item quantity
+          const newQuantity = existingItem.quantity + guestItem.quantity;
+          
+          // Check if combined quantity exceeds stock
+          if (newQuantity > product.totalStock) {
+            console.warn(`[CartController] Combined quantity exceeds stock for ${product.title}: setting to max available`);
+            existingItem.quantity = product.totalStock;
+          } else {
+            existingItem.quantity = newQuantity;
+          }
+          
+          console.log(`[CartController] Updated existing item ${product.title}: quantity = ${existingItem.quantity}`);
+        } else {
+          // Add new item to user cart
+          userCart.items.push({
+            productId: product._id,
+            quantity: guestItem.quantity,
+            title: product.title, // Fixed: was product.name
+            price: product.price,
+            salePrice: product.salePrice,
+            image: product.image || "",
+            totalStock: product.totalStock
+          });
+          
+          console.log(`[CartController] Added new item ${product.title}: quantity = ${guestItem.quantity}`);
+        }
+        
+        mergedCount++;
+      } catch (itemError) {
+        console.error(`[CartController] Error processing item ${guestItem.productId}:`, itemError);
+        skippedCount++;
       }
     }
 
+    // Save the merged cart
     await userCart.save();
-    console.log("[CartController] Merged items saved to user cart");
+    console.log(`[CartController] Merge complete: ${mergedCount} items merged, ${skippedCount} items skipped`);
 
-    // 5️⃣ Delete guest cart from DB
+    // 5️⃣ Cleanup: Delete guest cart from DB
     if (guestCart) {
       await Cart.deleteOne({ sessionId });
       console.log("[CartController] Guest cart deleted from DB");
     }
 
-    // 6️⃣ Return updated cart
-    const mergedCart = await Cart.findOne({ userId })
-    .populate("items.productId", "title price salePrice image totalStock")
+    // 6️⃣ Return the final merged cart with populated product details
+    const finalCart = await Cart.findOne({ userId })
+      .populate("items.productId", "title price salePrice image totalStock");
 
-    console.log("[CartController] Final merged cart:", mergedCart);
+    console.log(`[CartController] Final merged cart has ${finalCart.items.length} items`);
 
     res.status(200).json({
       success: true,
+      message: `Cart merged successfully ${mergedCount} items added${skippedCount > 0 ? `, ${skippedCount} items skipped due to issues` : ''}`,
       cart: {
-        items: mergedCart.items.map(item => ({
+        items: finalCart.items.map(item => ({
           productId: item.productId._id,
           quantity: item.quantity,
           title: item.productId.title,
           price: item.productId.price,
           salePrice: item.productId.salePrice,
-          totalStock: item.productId.totalStock,
+          stock: item.productId.totalStock,
           image: item.productId.image || ""
         }))
+      },
+      mergeStats: {
+        merged: mergedCount,
+        skipped: skippedCount
       }
     });
+
   } catch (error) {
     console.error("[CartController] Merge error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to merge carts",
+      message: "Failed to merge carts: " + error.message,
       cart: { items: [] }
     });
   }
 };
 
+
 module.exports = {
   addToCart,
   fetchCartItems,
-  updateCartItemsQty,
+  updateCartItemsQty, 
   deleteCartItem,
   clearCart,
   mergeGuestCart

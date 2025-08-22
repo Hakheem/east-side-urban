@@ -168,10 +168,14 @@ export const mergeCarts = createAsyncThunk(
     try {
       const state = getState();
       const isAuthenticated = state?.auth?.isAuthenticated;
-      const guestItems =
-        state?.shopCart?.cartItems?.filter((i) => !i.userId) || [];
+      const guestItems = state?.shopCart?.cartItems?.filter((item) => !item.userId) || [];
+
+      console.log("[Redux mergeCarts] Starting merge process");
+      console.log("[Redux mergeCarts] isAuthenticated:", isAuthenticated);
+      console.log("[Redux mergeCarts] guestItems count:", guestItems.length);
 
       if (!isAuthenticated) {
+        console.log("[Redux mergeCarts] User not authenticated, skipping merge");
         return {
           success: false,
           message: "Not authenticated",
@@ -179,7 +183,9 @@ export const mergeCarts = createAsyncThunk(
         };
       }
 
+      // If no guest items, just fetch the current user cart
       if (guestItems.length === 0) {
+        console.log("[Redux mergeCarts] No guest items to merge, fetching current cart");
         const resp = await dispatch(fetchCartItems()).unwrap();
         return {
           success: true,
@@ -188,26 +194,54 @@ export const mergeCarts = createAsyncThunk(
         };
       }
 
+      // Prepare guest items for merging (ensure consistent structure)
+      const sanitizedGuestItems = guestItems.map(item => ({
+        productId: String(item.productId).trim(),
+        quantity: parseInt(item.quantity) || 1,
+        // Include any additional fields that might be useful for validation
+        title: item.title,
+        price: item.price,
+        salePrice: item.salePrice,
+        image: item.image
+      }));
+
+      console.log("[Redux mergeCarts] Sanitized guest items:", sanitizedGuestItems);
+
+      // Call the merge API
       const response = await makeCartRequest("post", "/merge", {
-        guestCartItems: guestItems,
+        guestCartItems: sanitizedGuestItems,
       });
 
-      // Clear guest cart locally after a successful merge
+      console.log("[Redux mergeCarts] Merge API response:", response);
+
+      // Clear guest cart from localStorage after successful merge
       dispatch(clearGuestCart());
+      console.log("[Redux mergeCarts] Guest cart cleared from localStorage");
 
       return {
         success: true,
+        message: response.message || "Carts merged successfully",
         cart: response.cart || { items: [] },
+        mergeStats: response.mergeStats, // Pass through merge statistics
       };
+
     } catch (err) {
+      console.error("[Redux mergeCarts] Error:", err);
+      
+      // In case of error, preserve the current cart items
       const currentItems = getState().shopCart.cartItems;
+      
       return rejectWithValue({
         message: err.message || "Merge failed",
         cart: { items: currentItems },
+        // Don't clear guest cart if merge failed
+        preserveGuestCart: true
       });
     }
   }
 );
+
+
 
 export const clearCart = createAsyncThunk(
   "cart/clearCart",
@@ -377,7 +411,7 @@ const cartSlice = createSlice({
  
 export const {
   addToGuestCart,
-  removeFromGuestCart,
+  removeFromGuestCart, 
   updateGuestCartItem,
   clearGuestCart,
 } = cartSlice.actions;

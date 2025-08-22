@@ -30,26 +30,60 @@ const AuthLogin = () => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
     try {
-      // 1. Log in
-      await dispatch(loginUser(formData)).unwrap();
+      console.log("[AuthLogin] Starting login process...");
+      
+      // 1. Log in first
+      const loginResult = await dispatch(loginUser(formData)).unwrap();
+      console.log("[AuthLogin] Login successful:", loginResult);
 
-      // 2. Merge guest cart immediately
-      await dispatch(mergeCarts()).unwrap();
-
-      // 3. Fetch the merged cart
-      await dispatch(fetchCartItems()).unwrap();
-
+      // 2. Show login success message
       toast({
         title: "Login Successful",
         description: "Welcome back!",
         variant: "success",
       });
 
-      // 4. Navigate
-      navigate(user?.role === "admin" ? "/admin/dashboard" : "/home");
-    } catch (err) {
-      console.error("[AUTH] Login error:", err);
+      // 3. Attempt to merge carts (non-blocking)
+      try {
+        console.log("[AuthLogin] Starting cart merge...");
+        const mergeResult = await dispatch(mergeCarts()).unwrap();
+        console.log("[AuthLogin] Merge result:", mergeResult);
+        
+        if (mergeResult.mergeStats && mergeResult.mergeStats.merged > 0) {
+          toast({
+            title: "Cart Merged",
+            description: `${mergeResult.mergeStats.merged} item(s) from your guest cart have been added!`,
+            variant: "success",
+          });
+        }
+      } catch (mergeError) {
+        console.error("[AuthLogin] Cart merge failed:", mergeError);
+        // Don't block login for merge failures
+        toast({
+          title: "Cart Merge Issue",
+          description: "Your items may not have been merged. Please check your cart.",
+          variant: "warning",
+        });
+      }
+
+      // 4. Always fetch the final cart state
+      try {
+        await dispatch(fetchCartItems()).unwrap();
+        console.log("[AuthLogin] Cart items fetched successfully");
+      } catch (fetchError) {
+        console.error("[AuthLogin] Failed to fetch cart items:", fetchError);
+      }
+
+      // 5. Navigate based on user role
+      const targetRoute = loginResult.user?.role === "admin" ? "/admin/dashboard" : "/home";
+      console.log("[AuthLogin] Navigating to:", targetRoute);
+      navigate(targetRoute);
+
+    } catch (loginError) {
+      console.error("[AuthLogin] Login error:", loginError);
+      // The error toast will be handled by the useEffect hook below
     }
   };
 
@@ -63,6 +97,7 @@ const AuthLogin = () => {
       return;
     }
 
+    // TODO: Implement actual forgot password API call
     toast({
       title: "Password Reset Email Sent",
       description: `If an account exists for ${forgotPasswordEmail}, you will receive an email with instructions.`,
@@ -70,6 +105,7 @@ const AuthLogin = () => {
     });
 
     setShowForgotPassword(false);
+    setForgotPasswordEmail("");
   };
 
   useEffect(() => {
@@ -177,7 +213,10 @@ const AuthLogin = () => {
               </button>
               <button
                 type="button"
-                onClick={() => setShowForgotPassword(false)}
+                onClick={() => {
+                  setShowForgotPassword(false);
+                  setForgotPasswordEmail("");
+                }}
                 className="w-full border py-2 px-4 rounded-md hover:bg-gray-50"
               >
                 Cancel

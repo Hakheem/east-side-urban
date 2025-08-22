@@ -11,7 +11,7 @@ import DissolvingBanner from "@/components/common/DissolvingBanner";
 import { fetchCartItems, clearCart } from "@/store/shop/cartSlice";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Checkout = () => {
+const Checkout = () => { 
   const bannerImages = [
     images.account,
     images.accesoriesHeader,
@@ -19,7 +19,7 @@ const Checkout = () => {
   ];
 
   // Redux and Router Hooks
-  const dispatch = useDispatch();
+  const dispatch = useDispatch();  
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();

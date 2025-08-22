@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 const ProductDetails = ({ open, setOpen, productDetails }) => {
   if (!productDetails) return null; 
 
-  const [reviewMsg, setReviewMsg] = useState("");
+  const [reviewMsg, setReviewMsg] = useState(""); 
   const [rating, setRating] = useState(0); 
   const [quantity, setQuantity] = useState(1);
   const { toast } = useToast();

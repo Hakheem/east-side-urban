@@ -38,7 +38,7 @@ router.delete("/delete/:productId", authMiddleware, deleteCartItem);
 router.delete("/clear", authMiddleware, clearCart); // Add clearCart route
 router.get("/", authMiddleware, fetchCartItems);
 router.post("/merge", authMiddleware, mergeGuestCart);
-
+ 
 // 🔹 GUEST ROUTES
 router.get("/guest", sessionMiddleware, fetchCartItems);
 router.post("/guest/add", sessionMiddleware, addToCart);

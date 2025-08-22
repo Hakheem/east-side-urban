@@ -34,6 +34,7 @@ import CheckAuth from "./components/common/CheckAuth";
 import CustomLoader from "./components/ui/loader";
 import OrderSuccess from "./pages/shopping-veiw/Paypal/Cod-success";
 import PaystackCallback from "./components/shopping-veiw/PaystackCallback";
+import PaystackOrderSuccess from "./pages/shopping-veiw/paystack/order-success";
 
 function App() {
   const dispatch = useDispatch();
@@ -68,6 +69,7 @@ function App() {
             <Route path="cod-order-success" element={<OrderSuccess />} />
             <Route path="search" element={<SearchPage />} />
             <Route path="/paystack-callback" element={<PaystackCallback />} />
+            <Route path="/paystack-order-success" element={<PaystackOrderSuccess />} />
 
             {/* Protected shop routes */}
             <Route

@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { verifyPaystackPayment } from '@/store/shop/shopOrdersSlice';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { clearCart } from "@/store/shop/cartSlice";
-
 
 const PaystackCallback = () => {
   const dispatch = useDispatch();
@@ -15,123 +14,81 @@ const PaystackCallback = () => {
   
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState('processing');
+  
+  const orderId = sessionStorage.getItem('currentOrderId');
 
   useEffect(() => {
-    const handlePaystackReturn = async () => { 
-      try {
-        console.log("[Paystack Callback] Component mounted, processing return...");
-        
-        // Get parameters from URL
-        const reference = searchParams.get('reference');
-        const status = searchParams.get('status');
-        const orderId = sessionStorage.getItem('currentOrderId');
+    const verifyPayment = async () => {
+      const reference = searchParams.get('reference');
 
-        console.log("[Paystack Callback] Parameters:", {
-          reference,
-          status,
-          orderId,
-          fullQuery: window.location.search
+      if (!reference) {
+        toast({
+          title: "Payment Failed",
+          description: "Payment reference is missing. Please try again.",
+          variant: "destructive",
         });
+        setVerificationStatus('failed');
+        setIsVerifying(false);
+        setTimeout(() => navigate('/checkout'), 3000);
+        return;
+      }
 
-        // Check if payment was successful
-        if (status !== 'success' || !reference) {
-          console.error("[Paystack Callback] Payment failed or cancelled");
-          setVerificationStatus('failed');
-          
-          toast({
-            title: "Payment Failed",
-            description: status === 'cancelled' 
-              ? "Payment was cancelled" 
-              : "Payment was not successful",
-            variant: "destructive",
-          });
+      if (!orderId) {
+        toast({
+          title: "Order Not Found",
+          description: "No order found for this payment. Try again.",
+          variant: "destructive",
+        });
+        setVerificationStatus('failed');
+        setIsVerifying(false);
+        setTimeout(() => navigate('/checkout'), 3000);
+        return;
+      }
 
-          setTimeout(() => {
-            navigate('/checkout', {
-              state: {
-                error: 'Payment was not completed successfully',
-                paymentMethod: 'paystack'
-              }
-            });
-          }, 3000);
-          return;
-        }
-
-        if (!orderId) {
-          console.error("[Paystack Callback] No order ID found in session");
-          throw new Error('Order ID not found. Please try again.');
-        }
-
-        console.log("[Paystack Callback] Dispatching payment verification...");
-        
-        // Verify the payment
+      try {
+        // Dispatch verification thunk
         const result = await dispatch(
           verifyPaystackPayment({ reference, orderId })
         ).unwrap();
 
-        console.log("[Paystack Callback] Verification successful:", {
-          orderId: result.order.id,
-          status: result.order.status,
-          reference: result.paymentDetails.reference
-        });
+        setVerificationStatus('success');
 
         // Clear cart after successful payment
         try {
           await dispatch(clearCart());
-          console.log("[Paystack Callback] Cart cleared successfully");
-        } catch (clearCartError) {
-          console.warn("[Paystack Callback] Failed to clear cart:", clearCartError);
+        } catch (e) {
+          console.warn("Failed to clear cart:", e);
         }
 
-        setVerificationStatus('success');
-
-        // Navigate to success page
+        // Navigate to order success page
         setTimeout(() => {
-          navigate("/order-success", {
+          navigate('/paystack-order-success', {
             state: {
               order: result.order,
-              paymentMethod: "paystack",
               paymentDetails: result.paymentDetails,
-              reference: reference
-            },
+              paymentMethod: 'paystack',
+              reference
+            }
           });
         }, 2000);
 
       } catch (error) {
-        console.error("[Paystack Callback] Verification failed:", {
-          message: error.message,
-          payload: error.payload,
-          stack: error.stack,
-        });
-
-        setVerificationStatus('failed');
-
         toast({
           title: "Payment Verification Failed",
           description: error.message || "Could not verify payment",
           variant: "destructive",
         });
-
-        setTimeout(() => {
-          navigate("/checkout", {
-            state: {
-              error: error.message,
-              orderId: sessionStorage.getItem("currentOrderId"),
-              paymentMethod: "paystack",
-              reference: searchParams.get('reference')
-            },
-          });
-        }, 3000);
+        setVerificationStatus('failed');
+        setTimeout(() => navigate('/checkout'), 3000);
       } finally {
         setIsVerifying(false);
-        console.log("[Paystack Callback] Verification process completed");
       }
     };
 
-    handlePaystackReturn();
-  }, [searchParams, dispatch, navigate, toast]);
+    verifyPayment();
+  }, [searchParams, dispatch, navigate, toast, orderId]);
 
-  // Loading spinner component
+  // Loading spinner
   const LoadingSpinner = () => (
     <motion.div
       animate={{ rotate: 360 }}
@@ -182,7 +139,7 @@ const PaystackCallback = () => {
               Payment Successful!
             </h2>
             <p className="text-gray-600 mb-4">
-              Your payment has been verified successfully. Redirecting to order confirmation...
+              Your payment has been verified. Redirecting to order confirmation...
             </p>
             <div className="flex justify-center">
               <LoadingSpinner />
@@ -211,11 +168,8 @@ const PaystackCallback = () => {
               Payment Failed
             </h2>
             <p className="text-gray-600 mb-4">
-              We couldn't verify your payment. You'll be redirected to checkout to try again...
+              We couldn't verify your payment. You will be redirected to checkout to try again.
             </p>
-            <div className="flex justify-center">
-              <LoadingSpinner />
-            </div>
           </>
         )}
       </motion.div>
@@ -224,3 +178,4 @@ const PaystackCallback = () => {
 };
 
 export default PaystackCallback;
+

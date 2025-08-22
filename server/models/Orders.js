@@ -19,44 +19,44 @@ const OrderSchema = new mongoose.Schema({
     city: String,
     zipcode: String,
     phone: String,
-    notes: String, 
+    notes: String,
   },
   orderStatus: String,
   paymentMethod: String,
   paymentStatus: {
     type: String,
-    default: "pending"
+    default: "pending",
   },
   totalAmount: Number,
   orderDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   orderUpdateDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
   },
   paymentId: String,
   payerId: String,
   // Paystack specific fields
- paymentReference: {
-  type: String,
-  required: false,
-},
+  paymentReference: {
+    type: String,
+    required: false,
+  },
   paystackAuthorizationUrl: String,
   currency: {
     type: String,
-    default: "KES"
+    default: "KES",
   },
   isPaid: {
     type: Boolean,
-    default: false
+    default: false,
   },
   paidAt: Date,
 });
 
 // Update orderUpdateDate before saving
-OrderSchema.pre('save', function(next) {
+OrderSchema.pre("save", function (next) {
   this.orderUpdateDate = Date.now();
   next();
 });
