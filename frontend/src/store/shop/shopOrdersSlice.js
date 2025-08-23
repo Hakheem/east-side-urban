@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { API_URL } from '@/config/api'; // Import the dynamic API URL
 
 const initialState = {
   approvalUrl: null,
@@ -17,7 +18,7 @@ export const createOrder = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_URL_API}/api/orders/create`, 
+        `${API_URL}/api/orders/create`, // Using dynamic API_URL
         orderData,
         {
           headers: {
@@ -27,6 +28,7 @@ export const createOrder = createAsyncThunk(
       );
 
       console.log('Order Creation Response:', response.data);
+      console.log('API URL used:', `${API_URL}/api/orders/create`);
 
       // Validate response structure
       if (!response.data || !response.data.orderId) {
@@ -81,7 +83,8 @@ export const createOrder = createAsyncThunk(
         method: error.config?.method,
         status: error.response?.status,
         data: error.response?.data,
-        message: error.message
+        message: error.message,
+        apiUrl: API_URL
       });
 
       return rejectWithValue({
@@ -96,7 +99,7 @@ export const createOrder = createAsyncThunk(
   }
 );
 
-// New thunk for verifying Paystack payment
+// Updated verifyPaystackPayment with dynamic URL
 export const verifyPaystackPayment = createAsyncThunk(
   'orders/verifyPaystackPayment',
   async ({ reference, orderId }, { rejectWithValue }) => {
@@ -104,7 +107,7 @@ export const verifyPaystackPayment = createAsyncThunk(
       console.log('[Frontend] Verifying Paystack payment:', { reference, orderId });
       
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL_API}/api/orders/paystack/verify/${reference}`,
+        `${API_URL}/api/orders/paystack/verify/${reference}`, // Using dynamic API_URL
         {
           headers: {
             'Content-Type': 'application/json',
@@ -137,7 +140,8 @@ export const verifyPaystackPayment = createAsyncThunk(
         config: {
           url: error.config?.url,
           method: error.config?.method
-        }
+        },
+        apiUrl: API_URL
       });
       
       return rejectWithValue({
@@ -157,7 +161,7 @@ export const capturePayment = createAsyncThunk(
       console.log('[Frontend] Attempting to capture payment:', { paymentId, orderId });
       
       const { data } = await axios.post(
-        `${import.meta.env.VITE_URL_API}/api/orders/capture`,
+        `${API_URL}/api/orders/capture`, // Using dynamic API_URL
         { paymentId, orderId },
         {
           headers: {
@@ -187,7 +191,8 @@ export const capturePayment = createAsyncThunk(
           url: error.config?.url,
           method: error.config?.method,
           data: error.config?.data
-        }
+        },
+        apiUrl: API_URL
       });
       
       return rejectWithValue({
@@ -205,7 +210,7 @@ export const getAllOrdersByUserId = createAsyncThunk(
   async (userId, { rejectWithValue }) => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL_API}/api/orders/list/${userId}`
+        `${API_URL}/api/orders/list/${userId}` // Using dynamic API_URL
       );
       return data;
     } catch (error) {
@@ -223,7 +228,7 @@ export const getOrderDetails = createAsyncThunk(
   async (orderId, { rejectWithValue }) => {
     try {
       const { data } = await axios.get(
-        `${import.meta.env.VITE_URL_API}/api/orders/details/${orderId}`
+        `${API_URL}/api/orders/details/${orderId}` // Using dynamic API_URL
       );
       return data;
     } catch (error) {
