@@ -16,4 +16,4 @@ const client = new paypal.core.PayPalHttpClient(configureEnvironment());
 module.exports = {
   paypal, 
   client, 
-};
+}; 
