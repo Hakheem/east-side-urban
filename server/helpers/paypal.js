@@ -13,7 +13,7 @@ const configureEnvironment = () => {
 
 const client = new paypal.core.PayPalHttpClient(configureEnvironment());
 
-module.exports = {
+module.exports = { 
   paypal, 
   client, 
 }; 

@@ -6,7 +6,8 @@ const axios = require("axios");
 const crypto = require("crypto");
 require("dotenv").config();
 
-const isProd = process.env.ENV_MODE === "prod";
+const isProd = process.env.PAYPAL_MODE === "live"; 
+
 const clientBaseUrl = isProd
   ? process.env.CLIENT_URL_PROD
   : process.env.CLIENT_URL_DEV;
